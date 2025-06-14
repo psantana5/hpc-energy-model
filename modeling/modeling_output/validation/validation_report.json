@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-06-14T21:03:13.680955",
+  "timestamp": "2025-06-14T21:37:08.570903",
   "model_name": "HPC_Energy_Simulation",
   "validation_type": "comprehensive",
   "overall_score": 0.0,
@@ -38,14 +38,14 @@
   },
   "detailed_analysis": {
     "data_coverage": {
-      "job_metrics": {
-        "real_records": 0,
-        "simulated_records": 0,
-        "coverage_ratio": 0.0
+      "jobs": {
+        "real_records": 2400,
+        "simulated_records": 100,
+        "coverage_ratio": 0.041666666666666664
       },
       "node_metrics": {
         "real_records": 0,
-        "simulated_records": 0,
+        "simulated_records": 14400,
         "coverage_ratio": 0.0
       },
       "energy": {
@@ -64,7 +64,6 @@
   "plots_generated": [
     "modeling_output/validation/energy_validation.png",
     "modeling_output/validation/thermal_validation.png",
-    "modeling_output/validation/performance_validation.png",
     "modeling_output/validation/distribution_comparison.png"
   ]
 }

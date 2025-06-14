@@ -1,7 +1,7 @@
 
 # HPC Energy Modeling Report
 
-**Generated:** 2025-06-14T21:03:14.523435
+**Generated:** 2025-06-14T21:37:09.369366
 
 ## Executive Summary
 
@@ -16,18 +16,18 @@ This report presents the results of High-Level Modeling (HLM) simulation for HPC
 
 ## Data Summary
 
-- **Historical Jobs Analyzed:** 0
-- **Nodes Monitored:** 0
-- **Data Quality Score:** 0.0%
-- **Time Period:** NaT to NaT
+- **Historical Jobs Analyzed:** 2,400
+- **Nodes Monitored:** 42319
+- **Data Quality Score:** 100.0%
+- **Time Period:** 2022-01-01T01:01:28 to 2022-02-12T14:59:25
 
 ## Simulation Results
 
-- **Jobs Simulated:** 0
-- **Jobs Completed:** 0
-- **Completion Rate:** 0.0%
-- **Total Energy Consumed:** 0.0 Wh
-- **Average Power:** 0.0 W
+- **Jobs Simulated:** 100
+- **Jobs Completed:** 100
+- **Completion Rate:** 100.0%
+- **Total Energy Consumed:** 36,037.4 Wh
+- **Average Power:** 1501.6 W
 
 ## Validation Results
 

@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "timestamp": "2025-06-14T21:03:14.523435",
+    "timestamp": "2025-06-14T21:37:09.369366",
     "config": {
       "database": "DatabaseConfig(host='localhost', port=5432, database='hpc_energy_db', username='postgres', password='password', schema='hpc_energy', connection_timeout=30, query_timeout=300)",
       "simulation": "SimulationConfig(num_nodes=10, cores_per_node=16, memory_per_node_gb=64, time_step_seconds=60, simulation_duration_hours=24, warmup_time_minutes=30, cooldown_time_minutes=15, ambient_temperature_c=22.0, cooling_efficiency=0.85, humidity_percent=45.0, scheduling_algorithm='fifo', max_queue_size=1000, job_timeout_hours=24, thermal_time_constant=300, max_safe_temperature=85.0, throttling_temperature=90.0, idle_power_watts=150, max_power_watts=400, power_efficiency=0.92, default_cpu_cores=8, default_memory_gb=32, default_thermal_capacity=1000.0, default_cooling_coefficient=0.1, ambient_temperature=22.0, thermal_threshold_warning=75.0, thermal_threshold_critical=85.0, cpu_utilization_noise=0.05, memory_utilization_noise=0.03, io_pattern_variability=0.1, num_jobs=100)",
@@ -10,35 +10,216 @@
       "min_job_duration_seconds": 60,
       "max_job_duration_hours": 48,
       "validation_tolerance_percent": 10.0,
-      "statistical_significance_level": 0.05
+      "statistical_significance_level": 0.05,
+      "advanced": {
+        "alert_thresholds": {
+          "cpu_usage_percent": 95,
+          "disk_usage_percent": 85,
+          "memory_usage_percent": 90
+        },
+        "cache_directory": ".cache",
+        "cache_size_limit_gb": 2,
+        "chunk_size": 10000,
+        "cross_validation_strategy": "time_series",
+        "data_quality_checks": true,
+        "debug_mode": false,
+        "enable_caching": true,
+        "enable_monitoring": true,
+        "max_missing_percentage": 10.0,
+        "memory_limit_gb": 8,
+        "min_data_points": 1000,
+        "monitoring_interval_seconds": 300,
+        "n_jobs": -1,
+        "optimize_memory": true,
+        "parallel_backend": "threading",
+        "save_intermediate_results": false,
+        "use_gpu": false,
+        "validation_window_days": 7,
+        "verbose_logging": false
+      },
+      "data_loading": {
+        "combine_sources": true,
+        "feature_columns": [
+          "duration_seconds",
+          "num_nodes",
+          "cpu_hours",
+          "memory_gb",
+          "estimated_power_w",
+          "avg_temp_c",
+          "max_temp_c"
+        ],
+        "normalize_features": true
+      },
+      "data_sources": {
+        "balance_classes": false,
+        "energy_predictions_table": "energy_predictions",
+        "exclude_cancelled_jobs": true,
+        "exclude_failed_jobs": true,
+        "job_metrics_table": "job_metrics",
+        "max_job_duration_hours": 48,
+        "min_job_duration_seconds": 60,
+        "node_metrics_table": "node_metrics",
+        "public_datasets": {
+          "enabled": true,
+          "path": "./data/public_datasets/combined_public_data.csv",
+          "sample_path": "./data/public_datasets/sample_public_data.csv",
+          "validation_split": 0.2,
+          "weight": 0.3
+        },
+        "sample_rate": 1.0,
+        "stratify_sampling": true,
+        "training_end_date": "2024-12-31",
+        "training_start_date": "2024-01-01"
+      },
+      "features": {
+        "derived_features": [
+          "cpu_hours",
+          "memory_hours",
+          "effective_cpu_usage",
+          "temp_variance",
+          "power_efficiency",
+          "thermal_efficiency"
+        ],
+        "job_features": [
+          "cpu_cores",
+          "memory_mb",
+          "duration_seconds",
+          "job_type",
+          "partition",
+          "workload_pattern"
+        ],
+        "power_features": [
+          "avg_power_watts",
+          "peak_power_watts",
+          "idle_power_watts"
+        ],
+        "temporal_features": [
+          "hour_of_day",
+          "day_of_week",
+          "is_weekend",
+          "season"
+        ],
+        "thermal_features": [
+          "avg_cpu_temp",
+          "peak_cpu_temp",
+          "ambient_temp",
+          "cooling_efficiency"
+        ],
+        "usage_features": [
+          "cpu_usage",
+          "memory_usage",
+          "io_read_mbps",
+          "io_write_mbps",
+          "network_rx_mbps",
+          "network_tx_mbps"
+        ]
+      },
+      "model": {
+        "algorithms": [
+          "random_forest",
+          "gradient_boosting",
+          "linear",
+          "ridge"
+        ],
+        "cross_validation_folds": 5,
+        "feature_scaling": true,
+        "handle_missing_values": true,
+        "hyperparameter_tuning": true,
+        "max_mape_percent": 15.0,
+        "min_correlation": 0.75,
+        "min_r2_score": 0.7,
+        "model_versioning": true,
+        "outlier_detection": true,
+        "outlier_threshold": 3.0,
+        "random_state": 42,
+        "save_models": true,
+        "test_size": 0.2,
+        "tuning_cv_folds": 3,
+        "tuning_iterations": 50,
+        "validation_size": 0.1
+      },
+      "targets": {
+        "energy": [
+          "estimated_energy_wh",
+          "energy_efficiency"
+        ],
+        "performance": [
+          "job_completion_time",
+          "resource_utilization",
+          "queue_wait_time"
+        ],
+        "thermal": [
+          "avg_cpu_temp",
+          "peak_cpu_temp",
+          "temp_variance"
+        ]
+      },
+      "validation": {
+        "confidence_level": 0.95,
+        "generate_plots": true,
+        "metrics": [
+          "mae",
+          "mse",
+          "rmse",
+          "mape",
+          "r2",
+          "correlation",
+          "ks_statistic"
+        ],
+        "plot_types": [
+          "scatter",
+          "residuals",
+          "distribution",
+          "time_series",
+          "feature_importance"
+        ],
+        "significance_level": 0.05,
+        "strategy": "holdout",
+        "thresholds": {
+          "acceptable_r2": 0.7,
+          "excellent_r2": 0.9,
+          "good_r2": 0.8,
+          "max_acceptable_mape": 15.0
+        }
+      }
     },
     "pipeline_version": "1.0.0"
   },
   "data_summary": {
-    "total_jobs": 0,
-    "total_nodes": 0,
-    "data_quality_score": 0,
+    "total_jobs": 2400,
+    "total_nodes": "42319",
+    "data_quality_score": 100.0,
     "time_range": {
-      "start": "NaT",
-      "end": "NaT"
+      "start": "2022-01-01T01:01:28",
+      "end": "2022-02-12T14:59:25"
     }
   },
   "simulation_summary": {
     "simulation_config": {
       "duration": 86400,
-      "nodes": 0,
-      "total_cores": 0,
-      "total_memory_mb": 0
+      "nodes": 10,
+      "total_cores": 160,
+      "total_memory_mb": 320000
     },
     "job_statistics": {
-      "total_submitted": 0,
-      "total_completed": 0,
-      "jobs_in_queue": 100
+      "total_submitted": 100,
+      "total_completed": 100,
+      "jobs_in_queue": 0
     },
-    "performance_metrics": {},
+    "performance_metrics": {
+      "total_jobs_submitted": 100,
+      "total_jobs_completed": 100,
+      "completion_rate": 1.0,
+      "average_job_duration": 3600.0,
+      "average_expected_duration": 3600.0,
+      "average_slowdown": 1.0,
+      "total_energy_consumed": 36037.39805861014,
+      "average_power_consumption": 1501.5582524420895,
+      "simulation_duration": 86400
+    },
     "energy_summary": {
-      "total_energy_wh": 0.0,
-      "average_power_w": 0.0
+      "total_energy_wh": 36037.39805861014,
+      "average_power_w": 1501.5582524420895
     }
   },
   "validation_summary": {
@@ -51,7 +232,42 @@
     ]
   },
   "model_performance": {
-    "energy_model": {},
+    "energy_model": {
+      "best_model": "ridge",
+      "model_scores": {
+        "random_forest": {
+          "mae": 3754.8081238906857,
+          "mse": 63123984.66305496,
+          "rmse": 7945.060393921179,
+          "r2": 0.978417304255359,
+          "mape": 11.291941950029614
+        },
+        "gradient_boosting": {
+          "mae": 3575.0867139961088,
+          "mse": 58200595.12088689,
+          "rmse": 7628.931453413833,
+          "r2": 0.9801006583574196,
+          "mape": 15.723628426296182
+        },
+        "linear": {
+          "mae": 3489.7683387714,
+          "mse": 56125109.91805194,
+          "rmse": 7491.669367908059,
+          "r2": 0.9808102866531363,
+          "mape": 12.027855763684254
+        },
+        "ridge": {
+          "mae": 3489.0418601197657,
+          "mse": 56098333.57555232,
+          "rmse": 7489.882080216772,
+          "r2": 0.9808194417414344,
+          "mape": 11.981598437510014
+        }
+      },
+      "feature_importance": {},
+      "training_samples": 1920,
+      "test_samples": 480
+    },
     "thermal_model": {}
   }
 }
