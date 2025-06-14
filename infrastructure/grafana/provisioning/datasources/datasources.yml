@@ -1,0 +1,64 @@
+# Grafana datasources configuration for HPC Energy Model
+
+apiVersion: 1
+
+datasources:
+  # Prometheus datasource
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      timeInterval: "15s"
+      queryTimeout: "60s"
+      httpMethod: "POST"
+      manageAlerts: true
+      alertmanagerUid: "alertmanager"
+    secureJsonData: {}
+
+  # TimescaleDB datasource
+  - name: TimescaleDB
+    type: postgres
+    access: proxy
+    url: timescaledb:5432
+    database: hpc_energy
+    user: hpc_user
+    editable: true
+    jsonData:
+      sslmode: "disable"
+      maxOpenConns: 10
+      maxIdleConns: 2
+      connMaxLifetime: 14400
+      postgresVersion: 1300
+      timescaledb: true
+    secureJsonData:
+      password: hpc_password
+
+  # Alertmanager datasource
+  - name: Alertmanager
+    type: alertmanager
+    access: proxy
+    url: http://alertmanager:9093
+    uid: "alertmanager"
+    editable: true
+    jsonData:
+      implementation: "prometheus"
+      handleGrafanaManagedAlerts: false
+    secureJsonData: {}
+
+  # Loki for logs (optional, if implemented)
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: true
+    jsonData:
+      maxLines: 1000
+      derivedFields:
+        - datasourceUid: "prometheus"
+          matcherRegex: "job_id=(\\w+)"
+          name: "job_id"
+          url: "/d/hpc-jobs/hpc-job-analysis?var-job_id=${__value.raw}"
+    secureJsonData: {}
