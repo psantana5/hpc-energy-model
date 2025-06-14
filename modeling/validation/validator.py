@@ -199,7 +199,8 @@ class ModelValidator:
         performance_metrics = self._empty_validation_metrics()
         
         # Validate energy consumption
-        if 'energy' in real_data and 'energy' in simulated_data:
+        if ('energy' in real_data and 'energy' in simulated_data and 
+            real_data['energy'] is not None and simulated_data['energy'] is not None):
             energy_metrics = self.validate_energy_consumption(
                 real_data['energy'], simulated_data['energy']
             )
@@ -230,9 +231,33 @@ class ModelValidator:
         
         # Validate job performance
         if 'jobs' in real_data and 'jobs' in simulated_data:
-            if real_data['jobs'] is not None and len(real_data['jobs']) > 0:
+            if (real_data['jobs'] is not None and len(real_data['jobs']) > 0 and 
+                simulated_data['jobs'] is not None and len(simulated_data['jobs']) > 0):
+                # Handle column name mismatch between real and simulated data
+                real_jobs = real_data['jobs'].copy()
+                sim_jobs = simulated_data['jobs'].copy()
+                
+                logger.info(f"Real jobs columns: {list(real_jobs.columns)}")
+                logger.info(f"Simulated jobs columns: {list(sim_jobs.columns)}")
+                
+                # Standardize duration column names
+                if 'duration_seconds' in real_jobs.columns and 'duration' not in real_jobs.columns:
+                    real_jobs['duration'] = real_jobs['duration_seconds']
+                if 'duration' in sim_jobs.columns and 'duration_seconds' not in sim_jobs.columns:
+                    sim_jobs['duration_seconds'] = sim_jobs['duration']
+                
+                # Use the column that exists in both DataFrames
+                if 'duration' in real_jobs.columns and 'duration' in sim_jobs.columns:
+                    duration_col = 'duration'
+                elif 'duration_seconds' in real_jobs.columns and 'duration_seconds' in sim_jobs.columns:
+                    duration_col = 'duration_seconds'
+                else:
+                    logger.warning("No common duration column found, skipping job performance validation")
+                    performance_metrics = self._empty_validation_metrics()
+                    return
+                
                 performance_metrics = self.validate_job_performance(
-                    real_data['jobs'], simulated_data['jobs']
+                    real_jobs, sim_jobs, duration_column=duration_col
                 )
             else:
                 logger.warning("No real job data available for performance validation")
@@ -445,9 +470,14 @@ class ModelValidator:
     def _align_by_job_id(self, real_jobs: pd.DataFrame, simulated_jobs: pd.DataFrame,
                         value_column: str) -> Tuple[np.ndarray, np.ndarray]:
         """Align job data by job_id"""
+        # Convert job_id columns to string to ensure compatibility
+        real_jobs_copy = real_jobs[['job_id', value_column]].copy()
+        simulated_jobs_copy = simulated_jobs[['job_id', value_column]].copy()
+        real_jobs_copy['job_id'] = real_jobs_copy['job_id'].astype(str)
+        simulated_jobs_copy['job_id'] = simulated_jobs_copy['job_id'].astype(str)
+        
         # Merge on job_id
-        merged = pd.merge(real_jobs[['job_id', value_column]], 
-                         simulated_jobs[['job_id', value_column]], 
+        merged = pd.merge(real_jobs_copy, simulated_jobs_copy, 
                          on='job_id', suffixes=('_real', '_sim'))
         
         if len(merged) == 0:
@@ -615,40 +645,63 @@ class ModelValidator:
         fig.suptitle('Energy Consumption Validation', fontsize=16)
         
         # Time series comparison
-        if 'time' in real_data.columns and 'time' in simulated_data.columns:
+        if (real_data is not None and simulated_data is not None and 
+            hasattr(real_data, 'columns') and hasattr(simulated_data, 'columns') and
+            'time' in real_data.columns and 'time' in simulated_data.columns):
             axes[0, 0].plot(real_data['time'], real_data.get('energy_wh', real_data.get('total_power_watts', [])), 
                            label='Real', alpha=0.7)
             axes[0, 0].plot(simulated_data['time'], simulated_data.get('energy_wh', simulated_data.get('total_power_watts', [])), 
                            label='Simulated', alpha=0.7)
             axes[0, 0].set_title('Time Series Comparison')
             axes[0, 0].legend()
+        else:
+            axes[0, 0].text(0.5, 0.5, 'No time series data available', ha='center', va='center', transform=axes[0, 0].transAxes)
         
         # Scatter plot
-        real_values = real_data.get('energy_wh', real_data.get('total_power_watts', [])).values
-        sim_values = simulated_data.get('energy_wh', simulated_data.get('total_power_watts', [])).values
+        if real_data is not None and simulated_data is not None:
+            real_values = real_data.get('energy_wh', real_data.get('total_power_watts', [])).values
+            sim_values = simulated_data.get('energy_wh', simulated_data.get('total_power_watts', [])).values
+            
+            if len(real_values) > 0 and len(sim_values) > 0:
+                min_len = min(len(real_values), len(sim_values))
+                axes[0, 1].scatter(real_values[:min_len], sim_values[:min_len], alpha=0.5)
+                axes[0, 1].plot([min(real_values), max(real_values)], 
+                               [min(real_values), max(real_values)], 'r--', label='Perfect Agreement')
+                axes[0, 1].set_xlabel('Real Energy')
+                axes[0, 1].set_ylabel('Simulated Energy')
+            else:
+                axes[0, 1].text(0.5, 0.5, 'No energy data for scatter plot', ha='center', va='center', transform=axes[0, 1].transAxes)
+        else:
+            axes[0, 1].text(0.5, 0.5, 'No energy data available', ha='center', va='center', transform=axes[0, 1].transAxes)
         
-        if len(real_values) > 0 and len(sim_values) > 0:
-            min_len = min(len(real_values), len(sim_values))
-            axes[0, 1].scatter(real_values[:min_len], sim_values[:min_len], alpha=0.5)
-            axes[0, 1].plot([min(real_values), max(real_values)], 
-                           [min(real_values), max(real_values)], 'r--', label='Perfect Agreement')
-            axes[0, 1].set_xlabel('Real Energy')
-            axes[0, 1].set_ylabel('Simulated Energy')
-            axes[0, 1].set_title('Scatter Plot')
-            axes[0, 1].legend()
+        axes[0, 1].set_title('Scatter Plot')
+        axes[0, 1].legend()
         
         # Distribution comparison
-        axes[1, 0].hist(real_values, alpha=0.5, label='Real', bins=30)
-        axes[1, 0].hist(sim_values, alpha=0.5, label='Simulated', bins=30)
-        axes[1, 0].set_title('Distribution Comparison')
-        axes[1, 0].legend()
-        
-        # Error analysis
-        if len(real_values) == len(sim_values):
-            errors = sim_values - real_values
-            axes[1, 1].hist(errors, bins=30, alpha=0.7)
-            axes[1, 1].set_title('Prediction Errors')
-            axes[1, 1].set_xlabel('Error (Simulated - Real)')
+        if real_data is not None and simulated_data is not None:
+            real_values = real_data.get('energy_wh', real_data.get('total_power_watts', [])).values
+            sim_values = simulated_data.get('energy_wh', simulated_data.get('total_power_watts', [])).values
+            
+            if len(real_values) > 0 and len(sim_values) > 0:
+                axes[1, 0].hist(real_values, alpha=0.5, label='Real', bins=30)
+                axes[1, 0].hist(sim_values, alpha=0.5, label='Simulated', bins=30)
+                axes[1, 0].set_title('Distribution Comparison')
+                axes[1, 0].legend()
+                
+                # Error analysis
+                if len(real_values) == len(sim_values):
+                    errors = sim_values - real_values
+                    axes[1, 1].hist(errors, bins=30, alpha=0.7)
+                    axes[1, 1].set_title('Prediction Errors')
+                    axes[1, 1].set_xlabel('Error (Simulated - Real)')
+                else:
+                    axes[1, 1].text(0.5, 0.5, 'Cannot compute errors\n(different lengths)', ha='center', va='center', transform=axes[1, 1].transAxes)
+            else:
+                axes[1, 0].text(0.5, 0.5, 'No data for distribution', ha='center', va='center', transform=axes[1, 0].transAxes)
+                axes[1, 1].text(0.5, 0.5, 'No data for error analysis', ha='center', va='center', transform=axes[1, 1].transAxes)
+        else:
+            axes[1, 0].text(0.5, 0.5, 'No energy data available', ha='center', va='center', transform=axes[1, 0].transAxes)
+            axes[1, 1].text(0.5, 0.5, 'No energy data available', ha='center', va='center', transform=axes[1, 1].transAxes)
         
         plt.tight_layout()
         plot_path = output_path / 'energy_validation.png'
@@ -780,14 +833,17 @@ class ModelValidator:
                 sim_df = simulated_data[key]
                 
                 # Find a numeric column to plot
-                numeric_cols = real_df.select_dtypes(include=[np.number]).columns
-                if len(numeric_cols) > 0:
-                    col_name = numeric_cols[0]
-                    if col_name in sim_df.columns:
-                        axes[row, col].hist(real_df[col_name].dropna(), alpha=0.5, label='Real', bins=20)
-                        axes[row, col].hist(sim_df[col_name].dropna(), alpha=0.5, label='Simulated', bins=20)
-                        axes[row, col].set_title(f'{key}: {col_name}')
-                        axes[row, col].legend()
+                if real_df is not None and sim_df is not None:
+                    numeric_cols = real_df.select_dtypes(include=[np.number]).columns
+                    if len(numeric_cols) > 0:
+                        col_name = numeric_cols[0]
+                        if col_name in sim_df.columns:
+                            axes[row, col].hist(real_df[col_name].dropna(), alpha=0.5, label='Real', bins=20)
+                            axes[row, col].hist(sim_df[col_name].dropna(), alpha=0.5, label='Simulated', bins=20)
+                            axes[row, col].set_title(f'{key}: {col_name}')
+                            axes[row, col].legend()
+                else:
+                    axes[row, col].text(0.5, 0.5, f'No data for {key}', ha='center', va='center', transform=axes[row, col].transAxes)
                 
                 plot_idx += 1
         
