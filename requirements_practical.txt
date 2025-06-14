@@ -1,0 +1,155 @@
+# Enhanced HPC Energy Model Requirements
+# Additional dependencies for advanced performance benchmarking and ML capabilities
+
+# Core scientific computing
+numpy>=1.21.0
+pandas>=1.3.0
+scipy>=1.7.0
+matplotlib>=3.4.0
+seaborn>=0.11.0
+
+# Machine Learning - Core
+scikit-learn>=1.0.0
+joblib>=1.0.0
+
+# Advanced ML Libraries
+xgboost>=1.5.0
+lightgbm>=3.3.0
+catboost>=1.0.0
+
+# Deep Learning (Optional)
+tensorflow>=2.8.0
+torch>=1.11.0
+
+# Hyperparameter Optimization
+optuna>=3.0.0
+hyperopt>=0.2.7
+skopt>=0.9.0
+
+# Performance Monitoring
+psutil>=5.8.0
+py-cpuinfo>=8.0.0
+GPUtil>=1.4.0
+
+# Time Series Analysis
+statsmodels>=0.13.0
+
+# Feature Engineering
+featuretools>=1.0.0
+tsfresh>=0.19.0
+
+# Model Interpretation
+shap>=0.41.0
+lime>=0.2.0.1
+
+# Visualization
+plotly>=5.0.0
+bokeh>=2.4.0
+
+# Database and Data Processing
+sqlalchemy>=1.4.0
+psycopg2-binary>=2.9.0
+
+# API and Web Framework
+fastapi>=0.70.0
+uvicorn>=0.15.0
+pydantic>=1.8.0
+
+# Configuration and Environment
+python-dotenv>=0.19.0
+click>=8.0.0
+pyyaml>=6.0
+
+# Testing and Quality
+pytest>=6.2.0
+pytest-cov>=3.0.0
+black>=22.0.0
+flake8>=4.0.0
+
+# Logging and Monitoring
+loguru>=0.6.0
+prometheus-client>=0.12.0
+
+# Parallel Processing
+dask>=2022.1.0
+
+# Mathematical and Statistical
+numba>=0.56.0
+
+# Data Validation
+pandera>=0.11.0
+
+# Experiment Tracking
+mlflow>=1.24.0
+wandb>=0.12.0
+
+# Security
+cryptography>=36.0.0
+
+# Development Tools
+ipython>=7.30.0
+jupyter>=1.0.0
+
+# Profiling and Performance
+line-profiler>=3.5.0
+memory-profiler>=0.60.0
+
+# Network and Communication
+requests>=2.27.0
+
+# File Formats
+h5py>=3.6.0
+pyarrow>=6.0.0
+
+# Optimization
+cvxpy>=1.2.0
+
+# Graph Analysis (for system topology)
+networkx>=2.6.0
+
+# Configuration Management
+hydra-core>=1.1.0
+
+# Container and Orchestration
+docker>=5.0.0
+
+# Caching
+redis>=4.1.0
+
+# AutoML
+auto-sklearn>=0.14.0
+
+# Reinforcement Learning
+gym>=0.21.0
+stable-baselines3>=1.4.0
+
+# Bayesian Methods
+pymc>=4.0.0
+
+# GPU Computing (Optional)
+cupy>=10.0.0
+
+# Anomaly Detection
+pyod>=0.9.0
+
+# Clustering
+hdbscan>=0.8.0
+umap-learn>=0.5.0
+
+# Multi-objective Optimization
+deap>=1.3.0
+
+# Fuzzy Logic
+scikit-fuzzy>=0.4.0
+
+# Transformer Models
+transformers>=4.17.0
+
+# Differential Privacy
+diffprivlib>=0.5.0
+
+# Model Compression
+torch-pruning>=1.0.0
+
+# Neural Architecture Search
+nni>=2.6.0

@@ -48,6 +48,69 @@ This project implements an end-to-end energy monitoring solution for HPC systems
 
 ## 🚀 Quick Start
 
+### Prerequisites
+
+- **Hardware**: Minimum 8GB RAM, 4 CPU cores, 50GB storage
+- **Software**: Docker, Docker Compose, Git
+- **Network**: Internet connection for container downloads
+
+### Installation Options
+
+#### Option 1: Local Deployment
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/psantana5/hpc-energy-model.git
+   cd hpc-energy-model
+   ```
+
+2. **Configure environment**:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
+3. **Deploy the system**:
+   ```bash
+   # Linux/macOS
+   ./scripts/deploy.sh
+   
+   # Windows
+   .\scripts\deploy.ps1
+   ```
+
+4. **Access the interfaces**:
+   - **Grafana**: http://localhost:3000 (admin/admin)
+   - **Prometheus**: http://localhost:9090
+   - **API**: http://localhost:8000
+
+#### Option 2: AWS ParallelCluster Deployment
+
+For cloud-based HPC deployment with scalable compute resources:
+
+1. **Prerequisites**:
+   ```bash
+   # Install AWS CLI and ParallelCluster
+   pip3 install aws-parallelcluster
+   aws configure
+   ```
+
+2. **Deploy to AWS**:
+   ```bash
+   chmod +x scripts/deploy-aws-parallelcluster.sh
+   ./scripts/deploy-aws-parallelcluster.sh
+   ```
+
+3. **Access the cluster**:
+   ```bash
+   # SSH to head node
+   ./scripts/deploy-aws-parallelcluster.sh connect
+   ```
+
+For detailed AWS deployment instructions, see [AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md).
+
+### Legacy Quick Start
+
 ### 1. Clone the Repository
 
 ```bash

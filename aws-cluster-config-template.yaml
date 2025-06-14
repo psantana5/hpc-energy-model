@@ -1,0 +1,287 @@
+# AWS ParallelCluster Configuration Template for HPC Energy Model
+# Copy this file and customize for your deployment
+
+Region: us-east-1  # Change to your preferred region
+Image:
+  Os: ubuntu2004
+
+HeadNode:
+  InstanceType: c5.xlarge  # Adjust based on your needs
+  Networking:
+    SubnetId: subnet-xxxxxxxxx  # Will be auto-populated by deployment script
+  Ssh:
+    KeyName: hpc-energy-keypair  # Change if using different key name
+  LocalStorage:
+    RootVolume:
+      Size: 100  # GB - adjust based on your needs
+      VolumeType: gp3
+      Encrypted: true
+  Iam:
+    AdditionalIamPolicies:
+      - Policy: arn:aws:iam::ACCOUNT_ID:policy/ParallelClusterS3Policy-CLUSTER_NAME
+  CustomActions:
+    OnNodeStart:
+      Script: s3://BUCKET_NAME/shared/scripts/node-setup.sh
+
+Scheduling:
+  Scheduler: slurm
+  SlurmSettings:
+    QueueUpdateStrategy: TERMINATE
+  SlurmQueues:
+    # Main compute queue
+    - Name: compute
+      ComputeResources:
+        - Name: compute-resource
+          InstanceType: c5.xlarge  # Adjust based on workload
+          MinCount: 0  # Auto-scaling starts at 0
+          MaxCount: 10  # Maximum nodes - adjust based on budget
+          DisableSimultaneousMultithreading: false
+      Networking:
+        SubnetIds:
+          - subnet-xxxxxxxxx  # Will be auto-populated
+      Iam:
+        AdditionalIamPolicies:
+          - Policy: arn:aws:iam::ACCOUNT_ID:policy/ParallelClusterS3Policy-CLUSTER_NAME
+      CustomActions:
+        OnNodeStart:
+          Script: s3://BUCKET_NAME/shared/scripts/node-setup.sh
+    
+    # Optional: GPU queue for ML workloads
+    # - Name: gpu
+    #   ComputeResources:
+    #     - Name: gpu-resource
+    #       InstanceType: p3.2xlarge
+    #       MinCount: 0
+    #       MaxCount: 2
+    #   Networking:
+    #     SubnetIds:
+    #       - subnet-xxxxxxxxx
+    
+    # Optional: Spot instance queue for cost savings
+    # - Name: spot
+    #   ComputeResources:
+    #     - Name: spot-resource
+    #       InstanceType: c5.xlarge
+    #       MinCount: 0
+    #       MaxCount: 20
+    #       SpotPrice: 0.05  # Maximum spot price
+    #   Networking:
+    #     SubnetIds:
+    #       - subnet-xxxxxxxxx
+
+SharedStorage:
+  # High-performance Lustre filesystem
+  - MountDir: /shared
+    Name: shared-storage
+    StorageType: FsxLustre
+    FsxLustreSettings:
+      StorageCapacity: 1200  # GB - minimum for Lustre
+      DeploymentType: SCRATCH_2  # High performance
+      ImportPath: s3://BUCKET_NAME/shared/
+      ExportPath: s3://BUCKET_NAME/shared/
+      AutoImportPolicy: NEW_CHANGED  # Sync new/changed files
+      WeeklyMaintenanceStartTime: "1:00:00"  # Sunday 1 AM
+  
+  # Optional: Additional EFS storage for persistent data
+  # - MountDir: /efs
+  #   Name: efs-storage
+  #   StorageType: Efs
+  #   EfsSettings:
+  #     Encrypted: true
+  #     PerformanceMode: generalPurpose
+  #     ThroughputMode: provisioned
+  #     ProvisionedThroughput: 100  # MiB/s
+
+Monitoring:
+  DetailedMonitoring: true
+  Logs:
+    CloudWatch:
+      Enabled: true
+      RetentionInDays: 14
+      DashboardEnabled: true
+  Dashboards:
+    CloudWatch:
+      Enabled: true
+
+# Optional: Intel HPC Platform
+# AdditionalPackages:
+#   IntelSoftware:
+#     IntelHpcPlatform: true
+
+# Resource tags
+Tags:
+  - Key: Project
+    Value: HPC-Energy-Model
+  - Key: Environment
+    Value: Development  # Change to Production for prod deployments
+  - Key: Owner
+    Value: YourName  # Change to your name/team
+  - Key: CostCenter
+    Value: Research  # Change to your cost center
+  - Key: AutoShutdown
+    Value: "true"  # For automatic shutdown policies
+
+# Development/Testing Configuration
+# Uncomment and modify for smaller, cost-effective deployments
+# DevSettings:
+#   HeadNode:
+#     InstanceType: t3.medium
+#   ComputeQueues:
+#     - Name: dev-compute
+#       ComputeResources:
+#         - InstanceType: t3.small
+#           MaxCount: 2
+#   SharedStorage:
+#     - StorageCapacity: 1200  # Minimum Lustre size
+
+# Production Configuration
+# Uncomment and modify for production deployments
+# ProdSettings:
+#   HeadNode:
+#     InstanceType: c5.2xlarge
+#   ComputeQueues:
+#     - Name: prod-compute
+#       ComputeResources:
+#         - InstanceType: c5.2xlarge
+#           MaxCount: 50
+#   SharedStorage:
+#     - StorageCapacity: 4800  # Larger storage for production
+
+# Security Settings
+SecuritySettings:
+  # Restrict SSH access to your IP (recommended)
+  # SshCidrIp: YOUR_IP/32
+  
+  # Enable encryption
+  EncryptionSettings:
+    EbsEncryption:
+      Enabled: true
+    S3Encryption:
+      Enabled: true
+
+# Networking (will be auto-configured by deployment script)
+Networking:
+  VpcId: vpc-xxxxxxxxx
+  SecurityGroups:
+    - sg-xxxxxxxxx
+
+# Custom Scripts and Hooks
+CustomActions:
+  OnClusterStart:
+    Script: s3://BUCKET_NAME/shared/scripts/cluster-start.sh
+  OnClusterStop:
+    Script: s3://BUCKET_NAME/shared/scripts/cluster-stop.sh
+
+# Slurm Configuration
+SlurmSettings:
+  Database:
+    Uri: mysql://slurm:password@head-node:3306/slurm_acct_db
+  Dns:
+    DisableManagedDns: false
+  EnableMemoryBasedScheduling: true
+
+# Cost Optimization Settings
+CostOptimization:
+  # Enable Spot instances for non-critical workloads
+  SpotInstances:
+    Enabled: false  # Set to true to enable
+    MaxPrice: 0.10  # Maximum price per hour
+  
+  # Auto-scaling settings
+  AutoScaling:
+    ScaleDownIdleTime: 10  # Minutes before scaling down
+    BatchSize: 5  # Number of instances to launch at once
+
+# Backup and Recovery
+BackupSettings:
+  # Automatic snapshots
+  EbsSnapshots:
+    Enabled: true
+    RetentionDays: 7
+  
+  # S3 backup configuration
+  S3Backup:
+    Enabled: true
+    Schedule: "0 2 * * *"  # Daily at 2 AM
+    RetentionDays: 30
+
+# Performance Tuning
+PerformanceSettings:
+  # Network optimization
+  NetworkOptimization:
+    PlacementGroup:
+      Enabled: true
+      Strategy: cluster  # For low-latency networking
+  
+  # CPU optimization
+  CpuOptimization:
+    DisableHyperthreading: false
+    CpuGovernor: performance
+
+# Monitoring and Alerting
+AlertingSettings:
+  # CloudWatch alarms
+  CloudWatchAlarms:
+    HighCpuUtilization:
+      Threshold: 80
+      Period: 300
+    HighMemoryUtilization:
+      Threshold: 85
+      Period: 300
+    DiskSpaceUsage:
+      Threshold: 90
+      Period: 300
+
+# Integration Settings
+IntegrationSettings:
+  # External monitoring
+  Prometheus:
+    Enabled: true
+    Port: 9090
+  
+  # Log forwarding
+  LogForwarding:
+    Enabled: true
+    Destination: CloudWatch
+
+# Maintenance Windows
+MaintenanceSettings:
+  # Scheduled maintenance
+  MaintenanceWindow:
+    Day: Sunday
+    Time: "02:00"
+    Duration: 2  # Hours
+  
+  # Update policies
+  UpdatePolicy:
+    AutoUpdate: false  # Manual updates recommended
+    SecurityUpdates: true
+
+# Compliance and Governance
+ComplianceSettings:
+  # Data residency
+  DataResidency:
+    Region: us-east-1
+    AvailabilityZone: us-east-1a
+  
+  # Audit logging
+  AuditLogging:
+    Enabled: true
+    S3Bucket: BUCKET_NAME
+    S3Prefix: audit-logs/
+
+# Custom Environment Variables
+EnvironmentVariables:
+  HPC_ENERGY_MODEL_VERSION: "1.0.0"
+  AWS_DEFAULT_REGION: us-east-1
+  S3_BUCKET: BUCKET_NAME
+  CLUSTER_NAME: CLUSTER_NAME
+  ENVIRONMENT: development
+
+# Notes:
+# - Replace ACCOUNT_ID, BUCKET_NAME, CLUSTER_NAME with actual values
+# - Adjust instance types and counts based on your workload requirements
+# - Consider cost implications of instance types and storage sizes
+# - Enable GPU instances only if needed for ML workloads
+# - Use Spot instances for cost savings on fault-tolerant workloads
+# - Customize security settings based on your organization's requirements

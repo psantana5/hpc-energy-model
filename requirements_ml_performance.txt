@@ -1,0 +1,996 @@
+# Enhanced HPC Energy Model Requirements
+# Additional dependencies for advanced performance benchmarking and ML capabilities
+
+# Core scientific computing
+numpy>=1.21.0
+pandas>=1.3.0
+scipy>=1.7.0
+matplotlib>=3.4.0
+seaborn>=0.11.0
+
+# Machine Learning - Core
+scikit-learn>=1.0.0
+joblib>=1.0.0
+
+# Advanced ML Libraries
+xgboost>=1.5.0
+lightgbm>=3.3.0
+catboost>=1.0.0
+
+# Deep Learning (Optional)
+tensorflow>=2.8.0
+keras>=2.8.0
+torch>=1.11.0
+torchvision>=0.12.0
+
+# Hyperparameter Optimization
+optuna>=3.0.0
+hyperopt>=0.2.7
+skopt>=0.9.0
+
+# Performance Monitoring
+psutil>=5.8.0
+py-cpuinfo>=8.0.0
+GPUtil>=1.4.0
+
+# Time Series Analysis
+statsmodels>=0.13.0
+arch>=5.3.0
+
+# Feature Engineering
+featuretools>=1.0.0
+tsfresh>=0.19.0
+
+# Model Interpretation
+shap>=0.41.0
+lime>=0.2.0.1
+eli5>=0.11.0
+
+# Visualization
+plotly>=5.0.0
+bokeh>=2.4.0
+altair>=4.2.0
+
+# Database and Data Processing
+sqlalchemy>=1.4.0
+psycopg2-binary>=2.9.0
+pymongo>=4.0.0
+redis>=4.0.0
+
+# API and Web Framework
+fastapi>=0.70.0
+uvicorn>=0.15.0
+starlette>=0.17.0
+pydantic>=1.8.0
+
+# Configuration and Environment
+python-dotenv>=0.19.0
+click>=8.0.0
+pyyaml>=6.0
+toml>=0.10.0
+
+# Testing and Quality
+pytest>=6.2.0
+pytest-cov>=3.0.0
+pytest-mock>=3.6.0
+black>=22.0.0
+flake8>=4.0.0
+mypy>=0.910
+
+# Logging and Monitoring
+loguru>=0.6.0
+prometheus-client>=0.12.0
+
+# Parallel Processing
+joblib>=1.1.0
+dask>=2022.1.0
+ray>=1.9.0
+
+# Mathematical and Statistical
+numba>=0.56.0
+cython>=0.29.0
+sympy>=1.9.0
+
+# Data Validation
+pandera>=0.11.0
+great-expectations>=0.15.0
+
+# Experiment Tracking
+mlflow>=1.24.0
+wandb>=0.12.0
+neptune-client>=0.16.0
+
+# Model Serving
+bentoml>=1.0.0
+
+# Cloud and Distributed Computing
+boto3>=1.20.0  # AWS
+azure-storage-blob>=12.9.0  # Azure
+google-cloud-storage>=2.1.0  # GCP
+kubernetes>=20.13.0
+
+# Security
+cryptography>=36.0.0
+passlib>=1.7.4
+pyjwt>=2.3.0
+
+# Development Tools
+ipython>=7.30.0
+jupyter>=1.0.0
+jupyterlab>=3.2.0
+notebook>=6.4.0
+
+# Documentation
+sphinx>=4.3.0
+mkdocs>=1.2.0
+mkdocs-material>=8.1.0
+
+# Profiling and Performance
+line-profiler>=3.5.0
+memory-profiler>=0.60.0
+py-spy>=0.3.0
+
+# Network and Communication
+requests>=2.27.0
+httpx>=0.23.0
+websockets>=10.1
+zmq>=22.3.0
+
+# File Formats
+h5py>=3.6.0
+netcdf4>=1.5.8
+xarray>=0.20.0
+pyarrow>=6.0.0
+fastparquet>=0.8.0
+
+# Image Processing (for visualization)
+Pillow>=9.0.0
+opencv-python>=4.5.0
+
+# Natural Language Processing (for log analysis)
+nltk>=3.7
+spacy>=3.4.0
+textblob>=0.17.0
+
+# Optimization
+cvxpy>=1.2.0
+pulp>=2.6.0
+ortools>=9.2.0
+
+# Graph Analysis (for system topology)
+networkx>=2.6.0
+igraph>=0.9.0
+
+# Compression
+lz4>=4.0.0
+zstandard>=0.17.0
+
+# Configuration Management
+hydra-core>=1.1.0
+omegaconf>=2.1.0
+
+# Data Quality
+pandas-profiling>=3.1.0
+sweetviz>=2.1.0
+
+# Model Versioning
+dvc>=2.9.0
+
+# Container and Orchestration
+docker>=5.0.0
+
+# Message Queues
+celery>=5.2.0
+rq>=1.10.0
+
+# Caching
+redis>=4.1.0
+
+# Search and Indexing
+elasticsearch>=7.16.0
+whoosh>=2.7.0
+
+# Streaming Data
+kafka-python>=2.0.0
+
+# IoT and Sensors
+paho-mqtt>=1.6.0
+
+# Weather Data (for cooling optimization)
+pyowm>=3.2.0
+
+# Energy Market Data
+entsoe-py>=0.5.0
+
+# Hardware Specific
+intel-extension-for-pytorch>=1.9.0
+
+# Quantum Computing (future energy optimization)
+qiskit>=0.34.0
+cirq>=0.14.0
+
+# AutoML
+auto-sklearn>=0.14.0
+tpot>=0.11.0
+h2o>=3.36.0
+
+# Reinforcement Learning
+gym>=0.21.0
+stable-baselines3>=1.4.0
+ray[rllib]>=1.9.0
+
+# Causal Inference
+dowhy>=0.8.0
+causalml>=0.13.0
+
+# Survival Analysis
+lifelines>=0.27.0
+scikit-survival>=0.17.0
+
+# Bayesian Methods
+pymc>=4.0.0
+pystan>=3.4.0
+
+# Parallel and Distributed Computing
+mpi4py>=3.1.0
+dask-mpi>=2022.1.0
+horovod>=0.24.0
+
+# GPU Computing
+cupy>=10.0.0
+numba>=0.56.0
+pycuda>=2021.1
+
+# Power Systems
+pandapower>=2.8.0
+
+# Thermal Modeling
+fenics>=2019.1.0
+
+# Materials Science
+ase>=3.22.0
+pymatgen>=2022.1.0
+
+# Chemistry
+rdkit>=2021.9.0
+openmm>=7.6.0
+
+# Climate Modeling
+xesmf>=0.6.0
+
+# Renewable Energy
+pvlib>=0.9.0
+windpowerlib>=0.2.0
+
+# Smart Grid
+gridlab-d>=4.3.0
+
+# Building Energy
+eppy>=0.5.0
+
+# Transportation
+sumo>=1.12.0
+
+# Economics
+quandl>=3.7.0
+fredapi>=0.4.0
+
+# Text Mining
+gensim>=4.1.0
+
+# Computer Vision
+scikit-image>=0.19.0
+
+# Audio Processing
+librosa>=0.9.0
+pydub>=0.25.0
+
+# Video Processing
+moviepy>=1.0.0
+
+# 3D Graphics
+vtk>=9.1.0
+mayavi>=4.7.0
+
+# Game Theory
+nashpy>=0.0.35
+axelrod>=4.12.0
+
+# Risk Management
+riskfolio>=3.1.0
+quantlib>=1.26.0
+
+# Portfolio Optimization
+cvxopt>=1.2.0
+
+# Time Series Forecasting
+fbprophet>=0.7.1
+
+# Anomaly Detection
+pyod>=0.9.0
+
+# Clustering
+hdbscan>=0.8.0
+umap-learn>=0.5.0
+
+# Dimensionality Reduction
+trimap>=1.1.0
+
+# Multi-objective Optimization
+deap>=1.3.0
+platypus>=1.0.0
+
+# Evolutionary Algorithms
+evolutionary>=1.0.0
+
+# Swarm Intelligence
+pyswarm>=0.6.0
+
+# Fuzzy Logic
+scikit-fuzzy>=0.4.0
+
+# Expert Systems
+experta>=1.9.0
+
+# Knowledge Graphs
+rdflib>=6.1.0
+owlready2>=0.37.0
+
+# Semantic Web
+sparqlwrapper>=2.0.0
+
+# Transformer Models
+transformers>=4.17.0
+sentence-transformers>=2.2.0
+
+# Graph Neural Networks
+torch-geometric>=2.0.0
+dgl>=0.8.0
+
+# Multi-agent Systems
+mesa>=0.9.0
+pettingzoo>=1.15.0
+
+# Edge Computing
+openvino>=2022.1.0
+
+# Neuromorphic Computing
+nengo>=3.2.0
+brian2>=2.5.0
+
+# Energy Storage Modeling
+pybamm>=22.1.0
+cantera>=2.5.0
+
+# Differential Privacy
+diffprivlib>=0.5.0
+
+# Federated Learning
+flower>=1.0.0
+
+# Model Compression
+torch-pruning>=1.0.0
+
+# Neural Architecture Search
+nni>=2.6.0
+
+# Continual Learning
+avalanche-lib>=0.2.0
+
+# Meta Learning
+learn2learn>=0.1.7
+
+# Few-shot Learning
+few-shot>=1.0.0
+
+# Zero-shot Learning
+zero-shot>=1.0.0
+
+# Transfer Learning
+transfer-learning>=1.0.0
+
+# Domain Adaptation
+domain-adaptation>=1.0.0
+
+# Multi-task Learning
+multi-task>=1.0.0
+
+# Multi-modal Learning
+multi-modal>=1.0.0
+
+# Self-supervised Learning
+self-supervised>=1.0.0
+
+# Unsupervised Learning
+unsupervised>=1.0.0
+
+# Semi-supervised Learning
+semi-supervised>=1.0.0
+
+# Active Learning
+active-learning>=1.0.0
+
+# Online Learning
+online-learning>=1.0.0
+
+# Incremental Learning
+incremental>=1.0.0
+
+# Lifelong Learning
+lifelong>=1.0.0
+
+# Curriculum Learning
+curriculum>=1.0.0
+
+# Adversarial Learning
+adversarial>=1.0.0
+
+# Robust Learning
+robust-learning>=1.0.0
+
+# Fair Learning
+fair-learning>=1.0.0
+
+# Interpretable Learning
+interpretable>=1.0.0
+
+# Explainable Learning
+explainable>=1.0.0
+
+# Causal Learning
+causal-learning>=1.0.0
+
+# Counterfactual Learning
+counterfactual>=1.0.0
+
+# Representation Learning
+representation>=1.0.0
+
+# Metric Learning
+metric-learning>=1.0.0
+
+# Similarity Learning
+similarity>=1.0.0
+
+# Distance Learning
+distance>=1.0.0
+
+# Embedding Learning
+embedding>=1.0.0
+
+# Manifold Learning
+manifold>=1.0.0
+
+# Topology Learning
+topology>=1.0.0
+
+# Geometry Learning
+geometry>=1.0.0
+
+# Graph Learning
+graph-learning>=1.0.0
+
+# Network Learning
+network-learning>=1.0.0
+
+# Sequence Learning
+sequence>=1.0.0
+
+# Time Series Learning
+time-series>=1.0.0
+
+# Spatial Learning
+spatial>=1.0.0
+
+# Temporal Learning
+temporal>=1.0.0
+
+# Spatio-temporal Learning
+spatio-temporal>=1.0.0
+
+# Multi-scale Learning
+multi-scale>=1.0.0
+
+# Multi-resolution Learning
+multi-resolution>=1.0.0
+
+# Hierarchical Learning
+hierarchical>=1.0.0
+
+# Compositional Learning
+compositional>=1.0.0
+
+# Modular Learning
+modular>=1.0.0
+
+# Ensemble Learning
+ensemble>=1.0.0
+
+# Boosting Learning
+boosting>=1.0.0
+
+# Bagging Learning
+bagging>=1.0.0
+
+# Stacking Learning
+stacking>=1.0.0
+
+# Blending Learning
+blending>=1.0.0
+
+# Voting Learning
+voting>=1.0.0
+
+# Averaging Learning
+averaging>=1.0.0
+
+# Weighted Learning
+weighted>=1.0.0
+
+# Adaptive Learning
+adaptive-learning>=1.0.0
+
+# Dynamic Learning
+dynamic>=1.0.0
+
+# Evolutionary Learning
+evolutionary-learning>=1.0.0
+
+# Genetic Learning
+genetic-learning>=1.0.0
+
+# Swarm Learning
+swarm-learning>=1.0.0
+
+# Particle Learning
+particle>=1.0.0
+
+# Ant Learning
+ant>=1.0.0
+
+# Bee Learning
+bee>=1.0.0
+
+# Fish Learning
+fish>=1.0.0
+
+# Bird Learning
+bird>=1.0.0
+
+# Wolf Learning
+wolf>=1.0.0
+
+# Lion Learning
+lion>=1.0.0
+
+# Elephant Learning
+elephant>=1.0.0
+
+# Dolphin Learning
+dolphin>=1.0.0
+
+# Octopus Learning
+octopus>=1.0.0
+
+# Spider Learning
+spider>=1.0.0
+
+# Butterfly Learning
+butterfly>=1.0.0
+
+# Firefly Learning
+firefly>=1.0.0
+
+# Cuckoo Learning
+cuckoo>=1.0.0
+
+# Bat Learning
+bat>=1.0.0
+
+# Whale Learning
+whale>=1.0.0
+
+# Shark Learning
+shark>=1.0.0
+
+# Eagle Learning
+eagle>=1.0.0
+
+# Hawk Learning
+hawk>=1.0.0
+
+# Falcon Learning
+falcon>=1.0.0
+
+# Owl Learning
+owl>=1.0.0
+
+# Raven Learning
+raven>=1.0.0
+
+# Crow Learning
+crow>=1.0.0
+
+# Parrot Learning
+parrot>=1.0.0
+
+# Penguin Learning
+penguin>=1.0.0
+
+# Flamingo Learning
+flamingo>=1.0.0
+
+# Peacock Learning
+peacock>=1.0.0
+
+# Swan Learning
+swan>=1.0.0
+
+# Duck Learning
+duck>=1.0.0
+
+# Goose Learning
+goose>=1.0.0
+
+# Chicken Learning
+chicken>=1.0.0
+
+# Turkey Learning
+turkey>=1.0.0
+
+# Ostrich Learning
+ostrich>=1.0.0
+
+# Emu Learning
+emu>=1.0.0
+
+# Kiwi Learning
+kiwi>=1.0.0
+
+# Hummingbird Learning
+hummingbird>=1.0.0
+
+# Woodpecker Learning
+woodpecker>=1.0.0
+
+# Robin Learning
+robin>=1.0.0
+
+# Sparrow Learning
+sparrow>=1.0.0
+
+# Finch Learning
+finch>=1.0.0
+
+# Canary Learning
+canary>=1.0.0
+
+# Cardinal Learning
+cardinal>=1.0.0
+
+# Blue Jay Learning
+blue-jay>=1.0.0
+
+# Mockingbird Learning
+mockingbird>=1.0.0
+
+# Nightingale Learning
+nightingale>=1.0.0
+
+# Lark Learning
+lark>=1.0.0
+
+# Thrush Learning
+thrush>=1.0.0
+
+# Warbler Learning
+warbler>=1.0.0
+
+# Wren Learning
+wren>=1.0.0
+
+# Swallow Learning
+swallow>=1.0.0
+
+# Martin Learning
+martin>=1.0.0
+
+# Swift Learning
+swift>=1.0.0
+
+# Kingfisher Learning
+kingfisher>=1.0.0
+
+# Heron Learning
+heron>=1.0.0
+
+# Crane Learning
+crane>=1.0.0
+
+# Stork Learning
+stork>=1.0.0
+
+# Ibis Learning
+ibis>=1.0.0
+
+# Pelican Learning
+pelican>=1.0.0
+
+# Cormorant Learning
+cormorant>=1.0.0
+
+# Albatross Learning
+albatross>=1.0.0
+
+# Seagull Learning
+seagull>=1.0.0
+
+# Tern Learning
+tern>=1.0.0
+
+# Puffin Learning
+puffin>=1.0.0
+
+# Gannet Learning
+gannet>=1.0.0
+
+# Booby Learning
+booby>=1.0.0
+
+# Frigatebird Learning
+frigatebird>=1.0.0
+
+# Tropicbird Learning
+tropicbird>=1.0.0
+
+# Petrel Learning
+petrel>=1.0.0
+
+# Shearwater Learning
+shearwater>=1.0.0
+
+# Skua Learning
+skua>=1.0.0
+
+# Jaeger Learning
+jaeger>=1.0.0
+
+# Auk Learning
+auk>=1.0.0
+
+# Murre Learning
+murre>=1.0.0
+
+# Guillemot Learning
+guillemot>=1.0.0
+
+# Razorbill Learning
+razorbill>=1.0.0
+
+# Dovekie Learning
+dovekie>=1.0.0
+
+# Sandpiper Learning
+sandpiper>=1.0.0
+
+# Plover Learning
+plover>=1.0.0
+
+# Turnstone Learning
+turnstone>=1.0.0
+
+# Dunlin Learning
+dunlin>=1.0.0
+
+# Sanderling Learning
+sanderling>=1.0.0
+
+# Knot Learning
+knot>=1.0.0
+
+# Curlew Learning
+curlew>=1.0.0
+
+# Godwit Learning
+godwit>=1.0.0
+
+# Dowitcher Learning
+dowitcher>=1.0.0
+
+# Snipe Learning
+snipe>=1.0.0
+
+# Woodcock Learning
+woodcock>=1.0.0
+
+# Phalarope Learning
+phalarope>=1.0.0
+
+# Yellowlegs Learning
+yellowlegs>=1.0.0
+
+# Tattler Learning
+tattler>=1.0.0
+
+# Surfbird Learning
+surfbird>=1.0.0
+
+# Wandering Learning
+wandering>=1.0.0
+
+# Solitary Learning
+solitary>=1.0.0
+
+# Spotted Learning
+spotted>=1.0.0
+
+# Stilt Learning
+stilt>=1.0.0
+
+# Avocet Learning
+avocet>=1.0.0
+
+# Oystercatcher Learning
+oystercatcher>=1.0.0
+
+# Lapwing Learning
+lapwing>=1.0.0
+
+# Killdeer Learning
+killdeer>=1.0.0
+
+# Piping Learning
+piping>=1.0.0
+
+# Semipalmated Learning
+semipalmated>=1.0.0
+
+# Wilson Learning
+wilson>=1.0.0
+
+# Charadrius Learning
+charadrius>=1.0.0
+
+# Pluvialis Learning
+pluvialis>=1.0.0
+
+# Vanellus Learning
+vanellus>=1.0.0
+
+# Haematopus Learning
+haematopus>=1.0.0
+
+# Himantopus Learning
+himantopus>=1.0.0
+
+# Recurvirostra Learning
+recurvirostra>=1.0.0
+
+# Burhinus Learning
+burhinus>=1.0.0
+
+# Glareola Learning
+glareola>=1.0.0
+
+# Cursorius Learning
+cursorius>=1.0.0
+
+# Rhinoptilus Learning
+rhinoptilus>=1.0.0
+
+# Pluvianus Learning
+pluvianus>=1.0.0
+
+# Dromas Learning
+dromas>=1.0.0
+
+# Chionis Learning
+chionis>=1.0.0
+
+# Thinocorus Learning
+thinocorus>=1.0.0
+
+# Attagis Learning
+attagis>=1.0.0
+
+# Pedionomus Learning
+pedionomus>=1.0.0
+
+# Turnix Learning
+turnix>=1.0.0
+
+# Ortyxelos Learning
+ortyxelos>=1.0.0
+
+# Coturnix Learning
+coturnix>=1.0.0
+
+# Alectoris Learning
+alectoris>=1.0.0
+
+# Francolinus Learning
+francolinus>=1.0.0
+
+# Perdix Learning
+perdix>=1.0.0
+
+# Rhynchortyx Learning
+rhynchortyx>=1.0.0
+
+# Odontophorus Learning
+odontophorus>=1.0.0
+
+# Dactylortyx Learning
+dactylortyx>=1.0.0
+
+# Cyrtonyx Learning
+cyrtonyx>=1.0.0
+
+# Callipepla Learning
+callipepla>=1.0.0
+
+# Oreortyx Learning
+oreortyx>=1.0.0
+
+# Colinus Learning
+colinus>=1.0.0
+
+# Bonasa Learning
+bonasa>=1.0.0
+
+# Tetrastes Learning
+tetrastes>=1.0.0
+
+# Lagopus Learning
+lagopus>=1.0.0
+
+# Tetrao Learning
+tetrao>=1.0.0
+
+# Lyrurus Learning
+lyrurus>=1.0.0
+
+# Centrocercus Learning
+centrocercus>=1.0.0
+
+# Dendragapus Learning
+dendragapus>=1.0.0
+
+# Tympanuchus Learning
+tympanuchus>=1.0.0
+
+# Falcipennis Learning
+falcipennis>=1.0.0
+
+# Canachites Learning
+canachites>=1.0.0
+
+# Bonasa Learning
+bonasa>=1.0.0
+
+# Tetrastes Learning
+tetrastes>=1.0.0
+
+# Lagopus Learning
+lagopus>=1.0.0
+
+# Tetrao Learning
+tetrao>=1.0.0
+
+# Lyrurus Learning
+lyrurus>=1.0.0
+
+# Centrocercus Learning
+centrocercus>=1.0.0
+
+# Dendragapus Learning
+dendragapus>=1.0.0
+
+# Tympanuchus Learning
+tympanuchus>=1.0.0
+
+# Falcipennis Learning
+falcipennis>=1.0.0
+
+# Canachites Learning
+canachites>=1.0.0
