@@ -8,7 +8,7 @@ set -euo pipefail
 
 # Configuration
 CLUSTER_NAME="hpc-energy-cluster"
-REGION="us-east-1"
+REGION="eu-west-1"
 KEY_PAIR_NAME="hpc-energy-keypair"
 S3_BUCKET_PREFIX="hpc-energy-model"
 VPC_CIDR="10.0.0.0/16"
@@ -80,7 +80,7 @@ create_s3_buckets() {
     local bucket_name="${S3_BUCKET_PREFIX}-${account_id}-${REGION}"
     
     # Create main bucket
-    if aws s3 ls "s3://${bucket_name}" 2>&1 | grep -q 'NoSuchBucket'; then
+    if ! aws s3 ls "s3://${bucket_name}" >/dev/null 2>&1; then
         aws s3 mb "s3://${bucket_name}" --region "${REGION}"
         log_success "Created S3 bucket: ${bucket_name}"
     else
@@ -160,6 +160,7 @@ create_iam_resources() {
     
     local role_name="ParallelClusterInstanceRole-${CLUSTER_NAME}"
     local policy_name="ParallelClusterS3Policy-${CLUSTER_NAME}"
+    local account_id=$(aws sts get-caller-identity --query Account --output text)
     
     # Create IAM policy for S3 access
     local bucket_name=$(cat /tmp/s3_bucket_name)
@@ -186,11 +187,15 @@ create_iam_resources() {
 EOF
     
     # Create policy if it doesn't exist
-    if ! aws iam get-policy --policy-arn "arn:aws:iam::$(aws sts get-caller-identity --query Account --output text):policy/${policy_name}" &> /dev/null; then
+    if ! aws iam get-policy --policy-arn "arn:aws:iam::${account_id}:policy/${policy_name}" &> /dev/null; then
         aws iam create-policy --policy-name "${policy_name}" --policy-document file:///tmp/s3-policy.json
         log_success "Created IAM policy: ${policy_name}"
     else
         log_warning "IAM policy ${policy_name} already exists."
+        # Update the policy version if needed
+        aws iam create-policy-version --policy-arn "arn:aws:iam::${account_id}:policy/${policy_name}" \
+            --policy-document file:///tmp/s3-policy.json --set-as-default 2>/dev/null || \
+            log_warning "Policy version update skipped (may have reached version limit)"
     fi
     
     rm /tmp/s3-policy.json
@@ -280,9 +285,9 @@ Monitoring:
     CloudWatch:
       Enabled: true
       RetentionInDays: 14
-AdditionalPackages:
-  IntelSoftware:
-    IntelHpcPlatform: true
+# AdditionalPackages:
+#   IntelSoftware:
+#     IntelHpcPlatform: true
 Tags:
   - Key: Project
     Value: HPC-Energy-Model
@@ -297,47 +302,96 @@ EOF
 create_networking() {
     log_info "Creating VPC and networking..."
     
-    # Create VPC
-    local vpc_id=$(aws ec2 create-vpc --cidr-block "${VPC_CIDR}" --region "${REGION}" \
-        --tag-specifications "ResourceType=vpc,Tags=[{Key=Name,Value=${CLUSTER_NAME}-vpc}]" \
-        --query 'Vpc.VpcId' --output text)
+    # Check if VPC already exists
+    local existing_vpc_id=$(aws ec2 describe-vpcs --region "${REGION}" \
+        --filters "Name=tag:Name,Values=${CLUSTER_NAME}-vpc" \
+        --query 'Vpcs[0].VpcId' --output text 2>/dev/null || echo "None")
+    
+    local vpc_id
+    if [ "${existing_vpc_id}" != "None" ] && [ -n "${existing_vpc_id}" ]; then
+        log_warning "VPC ${CLUSTER_NAME}-vpc already exists: ${existing_vpc_id}"
+        vpc_id="${existing_vpc_id}"
+    else
+        # Create VPC
+        vpc_id=$(aws ec2 create-vpc --cidr-block "${VPC_CIDR}" --region "${REGION}" \
+            --tag-specifications "ResourceType=vpc,Tags=[{Key=Name,Value=${CLUSTER_NAME}-vpc}]" \
+            --query 'Vpc.VpcId' --output text)
+        log_success "Created VPC: ${vpc_id}"
+    fi
     
     # Enable DNS hostnames
     aws ec2 modify-vpc-attribute --vpc-id "${vpc_id}" --enable-dns-hostnames
     
-    # Create internet gateway
-    local igw_id=$(aws ec2 create-internet-gateway --region "${REGION}" \
-        --tag-specifications "ResourceType=internet-gateway,Tags=[{Key=Name,Value=${CLUSTER_NAME}-igw}]" \
-        --query 'InternetGateway.InternetGatewayId' --output text)
+    # Check if internet gateway already exists
+    local existing_igw_id=$(aws ec2 describe-internet-gateways --region "${REGION}" \
+        --filters "Name=tag:Name,Values=${CLUSTER_NAME}-igw" \
+        --query 'InternetGateways[0].InternetGatewayId' --output text 2>/dev/null || echo "None")
     
-    # Attach internet gateway to VPC
-    aws ec2 attach-internet-gateway --vpc-id "${vpc_id}" --internet-gateway-id "${igw_id}"
+    local igw_id
+    if [ "${existing_igw_id}" != "None" ] && [ -n "${existing_igw_id}" ]; then
+        log_warning "Internet Gateway ${CLUSTER_NAME}-igw already exists: ${existing_igw_id}"
+        igw_id="${existing_igw_id}"
+    else
+        # Create internet gateway
+        igw_id=$(aws ec2 create-internet-gateway --region "${REGION}" \
+            --tag-specifications "ResourceType=internet-gateway,Tags=[{Key=Name,Value=${CLUSTER_NAME}-igw}]" \
+            --query 'InternetGateway.InternetGatewayId' --output text)
+        log_success "Created Internet Gateway: ${igw_id}"
+    fi
     
-    # Create subnet
-    local subnet_id=$(aws ec2 create-subnet --vpc-id "${vpc_id}" --cidr-block "${SUBNET_CIDR}" \
-        --availability-zone "${REGION}a" --region "${REGION}" \
-        --tag-specifications "ResourceType=subnet,Tags=[{Key=Name,Value=${CLUSTER_NAME}-subnet}]" \
-        --query 'Subnet.SubnetId' --output text)
+    # Attach internet gateway to VPC (idempotent)
+    aws ec2 attach-internet-gateway --vpc-id "${vpc_id}" --internet-gateway-id "${igw_id}" 2>/dev/null || \
+        log_warning "Internet Gateway ${igw_id} already attached to VPC ${vpc_id}"
     
-    # Create route table
-    local rt_id=$(aws ec2 create-route-table --vpc-id "${vpc_id}" --region "${REGION}" \
-        --tag-specifications "ResourceType=route-table,Tags=[{Key=Name,Value=${CLUSTER_NAME}-rt}]" \
-        --query 'RouteTable.RouteTableId' --output text)
+    # Check if subnet already exists
+    local existing_subnet_id=$(aws ec2 describe-subnets --region "${REGION}" \
+        --filters "Name=tag:Name,Values=${CLUSTER_NAME}-subnet" \
+        --query 'Subnets[0].SubnetId' --output text 2>/dev/null || echo "None")
     
-    # Add route to internet gateway
-    aws ec2 create-route --route-table-id "${rt_id}" --destination-cidr-block "0.0.0.0/0" \
-        --gateway-id "${igw_id}"
+    local subnet_id
+    if [ "${existing_subnet_id}" != "None" ] && [ -n "${existing_subnet_id}" ]; then
+        log_warning "Subnet ${CLUSTER_NAME}-subnet already exists: ${existing_subnet_id}"
+        subnet_id="${existing_subnet_id}"
+    else
+        # Create subnet
+        subnet_id=$(aws ec2 create-subnet --vpc-id "${vpc_id}" --cidr-block "${SUBNET_CIDR}" \
+            --availability-zone "${REGION}a" --region "${REGION}" \
+            --tag-specifications "ResourceType=subnet,Tags=[{Key=Name,Value=${CLUSTER_NAME}-subnet}]" \
+            --query 'Subnet.SubnetId' --output text)
+        log_success "Created Subnet: ${subnet_id}"
+    fi
     
-    # Associate route table with subnet
-    aws ec2 associate-route-table --subnet-id "${subnet_id}" --route-table-id "${rt_id}"
+    # Check if route table already exists
+    local existing_rt_id=$(aws ec2 describe-route-tables --region "${REGION}" \
+        --filters "Name=tag:Name,Values=${CLUSTER_NAME}-rt" \
+        --query 'RouteTables[0].RouteTableId' --output text 2>/dev/null || echo "None")
+    
+    local rt_id
+    if [ "${existing_rt_id}" != "None" ] && [ -n "${existing_rt_id}" ]; then
+        log_warning "Route Table ${CLUSTER_NAME}-rt already exists: ${existing_rt_id}"
+        rt_id="${existing_rt_id}"
+    else
+        # Create route table
+        rt_id=$(aws ec2 create-route-table --vpc-id "${vpc_id}" --region "${REGION}" \
+            --tag-specifications "ResourceType=route-table,Tags=[{Key=Name,Value=${CLUSTER_NAME}-rt}]" \
+            --query 'RouteTable.RouteTableId' --output text)
+        log_success "Created Route Table: ${rt_id}"
+        
+        # Add route to internet gateway
+        aws ec2 create-route --route-table-id "${rt_id}" --destination-cidr-block "0.0.0.0/0" \
+            --gateway-id "${igw_id}"
+        
+        # Associate route table with subnet
+        aws ec2 associate-route-table --subnet-id "${subnet_id}" --route-table-id "${rt_id}"
+    fi
     
     # Update cluster config with actual subnet ID
-    sed -i "s/subnet-placeholder/${subnet_id}/g" "${CLUSTER_NAME}-config.yaml"
+    sed -i "" "s|subnet-placeholder|${subnet_id}|g" "${CLUSTER_NAME}-config.yaml"
     
     echo "${vpc_id}" > /tmp/vpc_id
     echo "${subnet_id}" > /tmp/subnet_id
     
-    log_success "VPC and networking created."
+    log_success "VPC and networking configured."
 }
 
 # Create node setup script
@@ -399,7 +453,7 @@ echo "Node setup completed"
 EOF
     
     # Replace bucket name placeholder
-    sed -i "s/BUCKET_NAME/${bucket_name}/g" node-setup.sh
+    sed -i "" "s/BUCKET_NAME/${bucket_name}/g" node-setup.sh
     
     # Upload to S3
     aws s3 cp node-setup.sh "s3://${bucket_name}/shared/scripts/"
@@ -411,26 +465,54 @@ EOF
 create_cluster() {
     log_info "Creating ParallelCluster..."
     
-    # Validate configuration
-    pcluster configure --config "${CLUSTER_NAME}-config.yaml"
+    # Check if cluster already exists
+    local existing_status=$(pcluster describe-cluster --cluster-name "${CLUSTER_NAME}" \
+        --region "${REGION}" 2>/dev/null | grep -o '"clusterStatus": "[^"]*"' | cut -d'"' -f4 || echo "NOT_FOUND")
     
-    # Create cluster
-    pcluster create-cluster --cluster-name "${CLUSTER_NAME}" \
-        --cluster-configuration "${CLUSTER_NAME}-config.yaml" \
-        --region "${REGION}"
-    
-    log_info "Cluster creation initiated. This may take 15-20 minutes..."
+    if [ "${existing_status}" = "CREATE_COMPLETE" ]; then
+        log_warning "Cluster ${CLUSTER_NAME} already exists and is ready."
+        return 0
+    elif [ "${existing_status}" = "CREATE_IN_PROGRESS" ]; then
+        log_warning "Cluster ${CLUSTER_NAME} is already being created. Waiting for completion..."
+    elif [ "${existing_status}" = "CREATE_FAILED" ]; then
+        log_error "Cluster ${CLUSTER_NAME} exists but creation failed. Please delete it first."
+        exit 1
+    elif [ "${existing_status}" = "DELETE_IN_PROGRESS" ]; then
+        log_error "Cluster ${CLUSTER_NAME} is being deleted. Please wait for deletion to complete."
+        exit 1
+    elif [ "${existing_status}" = "NOT_FOUND" ]; then
+        # Validate configuration (skip if config already validated)
+        if [ ! -f "${CLUSTER_NAME}-config.yaml.bak" ]; then
+            cp "${CLUSTER_NAME}-config.yaml" "${CLUSTER_NAME}-config.yaml.bak"
+            pcluster configure --config "${CLUSTER_NAME}-config.yaml" || {
+                log_warning "Configuration validation skipped (file may already be validated)"
+                cp "${CLUSTER_NAME}-config.yaml.bak" "${CLUSTER_NAME}-config.yaml"
+            }
+        else
+            log_warning "Configuration already validated, skipping pcluster configure"
+        fi
+        
+        # Create cluster
+        pcluster create-cluster --cluster-name "${CLUSTER_NAME}" \
+            --cluster-configuration "${CLUSTER_NAME}-config.yaml" \
+            --region "${REGION}"
+        
+        log_info "Cluster creation initiated. This may take 15-20 minutes..."
+    fi
     
     # Wait for cluster to be ready
     while true; do
         local status=$(pcluster describe-cluster --cluster-name "${CLUSTER_NAME}" \
-            --region "${REGION}" --query 'clusterStatus' --output text)
+            --region "${REGION}" 2>/dev/null | grep -o '"clusterStatus": "[^"]*"' | cut -d'"' -f4 || echo "UNKNOWN")
         
         if [ "$status" = "CREATE_COMPLETE" ]; then
             log_success "Cluster ${CLUSTER_NAME} is ready!"
             break
         elif [ "$status" = "CREATE_FAILED" ]; then
             log_error "Cluster creation failed!"
+            exit 1
+        elif [ "$status" = "UNKNOWN" ]; then
+            log_error "Unable to get cluster status. Please check manually."
             exit 1
         else
             log_info "Cluster status: $status. Waiting..."
@@ -530,9 +612,9 @@ main() {
     create_key_pair
     create_iam_resources
     upload_project_files
+    create_cluster_config
     create_networking
     create_node_setup_script
-    create_cluster_config
     create_cluster
     deploy_application
     
@@ -553,7 +635,7 @@ case "${1:-}" in
         
         # Clean up VPC resources
         if [ -f /tmp/vpc_id ]; then
-            local vpc_id=$(cat /tmp/vpc_id)
+            vpc_id=$(cat /tmp/vpc_id)
             aws ec2 delete-vpc --vpc-id "${vpc_id}" --region "${REGION}" || true
         fi
         
@@ -561,7 +643,7 @@ case "${1:-}" in
         read -p "Delete S3 bucket and all data? (y/N): " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
-            local bucket_name=$(cat /tmp/s3_bucket_name 2>/dev/null || echo "")
+            bucket_name=$(cat /tmp/s3_bucket_name 2>/dev/null || echo "")
             if [ -n "${bucket_name}" ]; then
                 aws s3 rb "s3://${bucket_name}" --force
                 log_success "S3 bucket deleted."
@@ -574,7 +656,7 @@ case "${1:-}" in
         pcluster describe-cluster --cluster-name "${CLUSTER_NAME}" --region "${REGION}"
         ;;
     "connect")
-        local head_node_ip=$(pcluster describe-cluster --cluster-name "${CLUSTER_NAME}" \
+        head_node_ip=$(pcluster describe-cluster --cluster-name "${CLUSTER_NAME}" \
             --region "${REGION}" --query 'headNode.publicIpAddress' --output text)
         ssh -i "${KEY_PAIR_NAME}.pem" "ubuntu@${head_node_ip}"
         ;;
