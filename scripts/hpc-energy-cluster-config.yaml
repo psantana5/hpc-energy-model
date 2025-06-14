@@ -25,7 +25,7 @@ Scheduling:
         - Name: compute-resource
           InstanceType: c5.metal
           MinCount: 0
-          MaxCount: 1
+          MaxCount: 10
       Networking:
         SubnetIds:
           - subnet-05b2bfa2a28db8cd3
