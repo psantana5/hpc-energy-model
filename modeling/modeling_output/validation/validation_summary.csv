@@ -1,8 +1,8 @@
 Metric,Value
-Energy R²,
-Energy MAPE (%),
-Thermal R²,
-Thermal MAPE (%),
+Energy R²,-0.44666603425676144
+Energy MAPE (%),99.02399291507261
+Thermal R²,-4.829445745125635
+Thermal MAPE (%),37.34485464956546
 Performance R²,
 Performance MAPE (%),
 Overall Score,0.0

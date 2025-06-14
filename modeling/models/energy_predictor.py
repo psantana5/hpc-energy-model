@@ -59,6 +59,8 @@ class EnergyPredictor:
             Tuple of (features, targets)
         """
         logger.info("Preparing features for energy prediction")
+        logger.info(f"Input DataFrame columns: {list(df.columns)}")
+        logger.info(f"Input DataFrame shape: {df.shape}")
         
         # Create a copy to avoid modifying original data
         data = df.copy()
@@ -74,20 +76,35 @@ class EnergyPredictor:
             'job_type', 'partition', 'workload_pattern'
         ]
         
-        # Target variable
-        target_col = 'estimated_energy_wh'
-        if target_col not in data.columns:
-            # Try alternative target columns
+        # Target variable - try multiple possible column names
+        target_col = None
+        possible_targets = ['estimated_energy_wh', 'energy_wh', 'avg_power_watts']
+        
+        for col in possible_targets:
+            if col in data.columns:
+                target_col = col
+                logger.info(f"Using target column: {target_col}")
+                break
+        
+        if target_col is None:
+            # Try to create energy target from power and duration
             if 'avg_power_watts' in data.columns and 'duration_seconds' in data.columns:
+                target_col = 'calculated_energy_wh'
                 data[target_col] = data['avg_power_watts'] * data['duration_seconds'] / 3600.0
                 logger.info("Created energy target from power and duration")
+            elif 'estimated_power_w' in data.columns and 'duration_seconds' in data.columns:
+                target_col = 'calculated_energy_wh'
+                data[target_col] = data['estimated_power_w'] * data['duration_seconds'] / 3600.0
+                logger.info("Created energy target from estimated power and duration")
             else:
-                raise ValueError("No suitable energy target column found")
+                raise ValueError(f"No suitable energy target column found. Available columns: {list(data.columns)}")
         
         # Filter available features
         available_numeric = [f for f in numeric_features if f in data.columns]
         available_categorical = [f for f in categorical_features if f in data.columns]
         
+        logger.info(f"Available numeric features: {available_numeric}")
+        logger.info(f"Available categorical features: {available_categorical}")
         logger.info(f"Using {len(available_numeric)} numeric and {len(available_categorical)} categorical features")
         
         # Handle missing values in numeric features
@@ -141,14 +158,42 @@ class EnergyPredictor:
             if feature in data.columns:
                 feature_columns.append(feature)
         
+        logger.info(f"Final feature columns before filtering: {feature_columns}")
+        
+        # Filter out features that don't exist in data
+        final_features = []
+        for feature in feature_columns:
+            if feature in data.columns:
+                final_features.append(feature)
+            else:
+                logger.warning(f"Feature {feature} not found in data columns")
+        
+        feature_columns = final_features
+        logger.info(f"Final feature columns after filtering: {feature_columns}")
+        logger.info(f"Total features selected: {len(feature_columns)}")
+        
+        if len(feature_columns) == 0:
+            logger.error("No valid features found!")
+            logger.error(f"Available columns: {list(data.columns)}")
+            raise ValueError("No valid features available for training")
+        
         self.feature_names = feature_columns
         
         # Extract features and target
         X = data[feature_columns].values
         y = data[target_col].values
         
+        logger.info(f"Extracted features shape: {X.shape}")
+        logger.info(f"Extracted target shape: {y.shape}")
+        
         # Ensure X contains only numeric values
-        X = X.astype(np.float64)
+        try:
+            X = X.astype(np.float64)
+            logger.info(f"Successfully converted features to float64")
+        except Exception as e:
+            logger.error(f"Error converting features to float64: {e}")
+            logger.error(f"Feature data types: {[type(x) for x in X.flatten()[:10]]}")
+            raise
         
         # Remove rows with invalid values in features or target
         # Check for NaN/inf in features
@@ -160,8 +205,20 @@ class EnergyPredictor:
         # Combine masks
         valid_mask = feature_valid_mask & target_valid_mask
         
+        logger.info(f"Valid samples before filtering: {len(valid_mask)}")
+        logger.info(f"Valid samples after filtering: {valid_mask.sum()}")
+        
         X = X[valid_mask]
         y = y[valid_mask]
+        
+        logger.info(f"Final X shape: {X.shape}")
+        logger.info(f"Final y shape: {y.shape}")
+        
+        if X.shape[1] == 0:
+            logger.error("Features array has 0 columns after processing!")
+            logger.error(f"Original feature_columns: {feature_columns}")
+            logger.error(f"Data columns: {list(data.columns)}")
+            raise ValueError("Features array has 0 columns")
         
         logger.info(f"Prepared {X.shape[0]} samples with {X.shape[1]} features")
         
@@ -199,10 +256,18 @@ class EnergyPredictor:
                 'models_trained': 0
             }
         
+        logger.info(f"Before train/test split - X shape: {X.shape}, y shape: {y.shape}")
+        
         # Split data
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, random_state=42
         )
+        
+        logger.info(f"After train/test split - X_train shape: {X_train.shape}, X_test shape: {X_test.shape}")
+        
+        if X_train.shape[1] == 0:
+            logger.error("X_train has 0 features after train/test split!")
+            raise ValueError("X_train has 0 features")
         
         # Scale features
         X_train_scaled = self.scaler.fit_transform(X_train)

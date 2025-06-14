@@ -85,10 +85,71 @@ class HPCModelingPipeline:
         # If we have public data, use it directly for now
         if not public_data.empty:
             logger.info(f"Using public dataset with {len(public_data)} records")
+            
+            # Map public dataset columns to expected feature names
+            column_mapping = {
+                'num_nodes': 'cpu_cores',  # Approximate mapping
+                'memory_gb': 'memory_mb',  # Will need conversion
+                'estimated_power_w': 'avg_power_watts',
+                'avg_temp_c': 'avg_cpu_temp',
+                'max_temp_c': 'peak_cpu_temp',
+                'dataset_source': 'partition'
+            }
+            
+            # Apply column mapping
+            for old_col, new_col in column_mapping.items():
+                if old_col in public_data.columns:
+                    public_data[new_col] = public_data[old_col]
+            
+            # Convert memory from GB to MB
+            if 'memory_gb' in public_data.columns:
+                public_data['memory_mb'] = public_data['memory_gb'] * 1024
+            
+            # Add missing features with reasonable defaults
+            default_features = {
+                'cpu_usage': 75.0,  # Assume 75% CPU usage
+                'memory_usage': 60.0,  # Assume 60% memory usage
+                'io_read_mbps': 10.0,
+                'io_write_mbps': 5.0,
+                'network_rx_mbps': 1.0,
+                'network_tx_mbps': 1.0,
+                'job_type': 'compute',
+                'workload_pattern': 'cpu_intensive'
+            }
+            
+            for feature, default_value in default_features.items():
+                if feature not in public_data.columns:
+                    public_data[feature] = default_value
+            
+            # Extract energy data from public dataset
+            energy_data = None
+            if 'estimated_energy_wh' in public_data.columns:
+                energy_data = public_data[['job_id', 'estimated_energy_wh']].copy()
+                energy_data.rename(columns={'estimated_energy_wh': 'energy_wh'}, inplace=True)
+                # Add time column from start_time for validation alignment
+                if 'start_time' in public_data.columns:
+                    energy_data['time'] = pd.to_datetime(public_data['start_time'])
+                    energy_data.set_index('time', inplace=True)
+            
+            # Extract thermal/node data from public dataset
+            node_data = None
+            if 'avg_temp_c' in public_data.columns and 'max_temp_c' in public_data.columns:
+                node_data = public_data[['job_id', 'avg_temp_c', 'max_temp_c']].copy()
+                node_data.rename(columns={
+                    'avg_temp_c': 'cpu_temp',
+                    'max_temp_c': 'peak_cpu_temp'
+                }, inplace=True)
+                # Add time column from start_time for validation alignment
+                if 'start_time' in public_data.columns:
+                    node_data['time'] = pd.to_datetime(public_data['start_time'])
+                    node_data.set_index('time', inplace=True)
+                # Add node_id for compatibility
+                node_data['node_id'] = 'node_' + (node_data.reset_index().index % 10).astype(str)
+            
             return {
                 'job_metrics': public_data,
-                'node_metrics': None,
-                'energy_predictions': None,
+                'node_metrics': node_data,
+                'energy_predictions': energy_data,
                 'processed_data': public_data,
                 'dataset_info': self.create_dataset_info_from_public(public_data)
             }
@@ -184,7 +245,11 @@ class HPCModelingPipeline:
                 
                 # Evaluate model
                 thermal_metrics = thermal_predictor.evaluate(data['node_metrics'])
-                logger.info(f"Thermal model R²: {thermal_metrics.get('r2', 'N/A'):.3f}")
+                r2_value = thermal_metrics.get('overall', {}).get('r2', 'N/A')
+                if isinstance(r2_value, (int, float)):
+                    logger.info(f"Thermal model R²: {r2_value:.3f}")
+                else:
+                    logger.info(f"Thermal model R²: {r2_value}")
             else:
                 logger.warning(f"Thermal model training failed: {training_result.get('message', 'Unknown error')}")
         

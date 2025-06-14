@@ -5,7 +5,7 @@
   "average_job_duration": 3600.0,
   "average_expected_duration": 3600.0,
   "average_slowdown": 1.0,
-  "total_energy_consumed": 36037.39805861014,
-  "average_power_consumption": 1501.5582524420895,
+  "total_energy_consumed": 32906.28282157755,
+  "average_power_consumption": 1371.0951175657315,
   "simulation_duration": 86400
 }

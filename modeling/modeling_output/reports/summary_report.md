@@ -1,7 +1,7 @@
 
 # HPC Energy Modeling Report
 
-**Generated:** 2025-06-14T21:37:09.369366
+**Generated:** 2025-06-14T21:56:57.823718
 
 ## Executive Summary
 
@@ -10,8 +10,8 @@ This report presents the results of High-Level Modeling (HLM) simulation for HPC
 ### Key Metrics
 
 - **Overall Validation Score:** 0.00/1.0
-- **Energy Model Accuracy (R²):** nan
-- **Thermal Model Accuracy (R²):** nan
+- **Energy Model Accuracy (R²):** -0.447
+- **Thermal Model Accuracy (R²):** -4.829
 - **Performance Model Accuracy (R²):** nan
 
 ## Data Summary
@@ -26,8 +26,8 @@ This report presents the results of High-Level Modeling (HLM) simulation for HPC
 - **Jobs Simulated:** 100
 - **Jobs Completed:** 100
 - **Completion Rate:** 100.0%
-- **Total Energy Consumed:** 36,037.4 Wh
-- **Average Power:** 1501.6 W
+- **Total Energy Consumed:** 32,906.3 Wh
+- **Average Power:** 1371.1 W
 
 ## Validation Results
 
@@ -35,7 +35,9 @@ The simulation results were validated against real historical data:
 
 ### Recommendations
 
-1. Model validation shows good agreement with real data. Consider fine-tuning for specific use cases.
+1. Energy model accuracy is below 70%. Consider improving power models or adding more features.
+2. Energy prediction error is high (>20%). Review workload characterization and power profiles.
+3. Thermal model needs improvement. Consider more sophisticated thermal dynamics or cooling models.
 
 
 ## Files Generated

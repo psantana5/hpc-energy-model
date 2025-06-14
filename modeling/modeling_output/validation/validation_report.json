@@ -1,29 +1,29 @@
 {
-  "timestamp": "2025-06-14T21:37:08.570903",
+  "timestamp": "2025-06-14T21:56:56.914824",
   "model_name": "HPC_Energy_Simulation",
   "validation_type": "comprehensive",
   "overall_score": 0.0,
   "energy_metrics": {
-    "mae": NaN,
-    "mse": NaN,
-    "rmse": NaN,
-    "mape": NaN,
-    "r2": NaN,
-    "correlation": NaN,
-    "ks_statistic": NaN,
-    "ks_pvalue": NaN,
-    "distribution_similarity": NaN
+    "mae": 32270.20613906487,
+    "mse": 3372546495.6107564,
+    "rmse": 58073.62995035489,
+    "mape": 99.02399291507261,
+    "r2": -0.44666603425676144,
+    "correlation": 0.02443413674785061,
+    "ks_statistic": 0.9902777777777778,
+    "ks_pvalue": 0.0,
+    "distribution_similarity": 0.009722222222222188
   },
   "thermal_metrics": {
-    "mae": NaN,
-    "mse": NaN,
-    "rmse": NaN,
-    "mape": NaN,
-    "r2": NaN,
-    "correlation": NaN,
-    "ks_statistic": NaN,
-    "ks_pvalue": NaN,
-    "distribution_similarity": NaN
+    "mae": 16.591392838194757,
+    "mse": 373.7980854531814,
+    "rmse": 19.33385852470172,
+    "mape": 37.34485464956546,
+    "r2": -4.829445745125635,
+    "correlation": 0.004166378663215226,
+    "ks_statistic": 0.5683333333333334,
+    "ks_pvalue": 0.0,
+    "distribution_similarity": 0.43166666666666664
   },
   "performance_metrics": {
     "mae": NaN,
@@ -44,14 +44,14 @@
         "coverage_ratio": 0.041666666666666664
       },
       "node_metrics": {
-        "real_records": 0,
+        "real_records": 2400,
         "simulated_records": 14400,
-        "coverage_ratio": 0.0
+        "coverage_ratio": 0.16666666666666666
       },
       "energy": {
-        "real_records": 0,
+        "real_records": 2400,
         "simulated_records": 1440,
-        "coverage_ratio": 0.0
+        "coverage_ratio": 0.6
       }
     },
     "bias_analysis": {},
@@ -59,7 +59,9 @@
     "outlier_analysis": {}
   },
   "recommendations": [
-    "Model validation shows good agreement with real data. Consider fine-tuning for specific use cases."
+    "Energy model accuracy is below 70%. Consider improving power models or adding more features.",
+    "Energy prediction error is high (>20%). Review workload characterization and power profiles.",
+    "Thermal model needs improvement. Consider more sophisticated thermal dynamics or cooling models."
   ],
   "plots_generated": [
     "modeling_output/validation/energy_validation.png",

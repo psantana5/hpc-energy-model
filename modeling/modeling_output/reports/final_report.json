@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "timestamp": "2025-06-14T21:37:09.369366",
+    "timestamp": "2025-06-14T21:56:57.823718",
     "config": {
       "database": "DatabaseConfig(host='localhost', port=5432, database='hpc_energy_db', username='postgres', password='password', schema='hpc_energy', connection_timeout=30, query_timeout=300)",
       "simulation": "SimulationConfig(num_nodes=10, cores_per_node=16, memory_per_node_gb=64, time_step_seconds=60, simulation_duration_hours=24, warmup_time_minutes=30, cooldown_time_minutes=15, ambient_temperature_c=22.0, cooling_efficiency=0.85, humidity_percent=45.0, scheduling_algorithm='fifo', max_queue_size=1000, job_timeout_hours=24, thermal_time_constant=300, max_safe_temperature=85.0, throttling_temperature=90.0, idle_power_watts=150, max_power_watts=400, power_efficiency=0.92, default_cpu_cores=8, default_memory_gb=32, default_thermal_capacity=1000.0, default_cooling_coefficient=0.1, ambient_temperature=22.0, thermal_threshold_warning=75.0, thermal_threshold_critical=85.0, cpu_utilization_noise=0.05, memory_utilization_noise=0.03, io_pattern_variability=0.1, num_jobs=100)",
@@ -198,7 +198,7 @@
     "simulation_config": {
       "duration": 86400,
       "nodes": 10,
-      "total_cores": 160,
+      "total_cores": 80,
       "total_memory_mb": 320000
     },
     "job_statistics": {
@@ -213,22 +213,24 @@
       "average_job_duration": 3600.0,
       "average_expected_duration": 3600.0,
       "average_slowdown": 1.0,
-      "total_energy_consumed": 36037.39805861014,
-      "average_power_consumption": 1501.5582524420895,
+      "total_energy_consumed": 32906.28282157755,
+      "average_power_consumption": 1371.0951175657315,
       "simulation_duration": 86400
     },
     "energy_summary": {
-      "total_energy_wh": 36037.39805861014,
-      "average_power_w": 1501.5582524420895
+      "total_energy_wh": 32906.28282157755,
+      "average_power_w": 1371.0951175657315
     }
   },
   "validation_summary": {
     "overall_score": 0.0,
-    "energy_r2": NaN,
-    "thermal_r2": NaN,
+    "energy_r2": -0.44666603425676144,
+    "thermal_r2": -4.829445745125635,
     "performance_r2": NaN,
     "recommendations": [
-      "Model validation shows good agreement with real data. Consider fine-tuning for specific use cases."
+      "Energy model accuracy is below 70%. Consider improving power models or adding more features.",
+      "Energy prediction error is high (>20%). Review workload characterization and power profiles.",
+      "Thermal model needs improvement. Consider more sophisticated thermal dynamics or cooling models."
     ]
   },
   "model_performance": {
@@ -236,38 +238,96 @@
       "best_model": "ridge",
       "model_scores": {
         "random_forest": {
-          "mae": 3754.8081238906857,
-          "mse": 63123984.66305496,
-          "rmse": 7945.060393921179,
-          "r2": 0.978417304255359,
-          "mape": 11.291941950029614
+          "mae": 3641.9620413831703,
+          "mse": 61895270.00644056,
+          "rmse": 7867.354701959265,
+          "r2": 0.9788374135803999,
+          "mape": 10.418345923973297
         },
         "gradient_boosting": {
-          "mae": 3575.0867139961088,
-          "mse": 58200595.12088689,
-          "rmse": 7628.931453413833,
-          "r2": 0.9801006583574196,
-          "mape": 15.723628426296182
+          "mae": 3722.9641400333767,
+          "mse": 63775235.81378399,
+          "rmse": 7985.939882930749,
+          "r2": 0.9781946352411236,
+          "mape": 18.97709806329114
         },
         "linear": {
-          "mae": 3489.7683387714,
-          "mse": 56125109.91805194,
-          "rmse": 7491.669367908059,
-          "r2": 0.9808102866531363,
-          "mape": 12.027855763684254
+          "mae": 3574.807321627912,
+          "mse": 56304976.73837666,
+          "rmse": 7503.6642207908435,
+          "r2": 0.9807487884622609,
+          "mape": 19.64267812991113
         },
         "ridge": {
-          "mae": 3489.0418601197657,
-          "mse": 56098333.57555232,
-          "rmse": 7489.882080216772,
-          "r2": 0.9808194417414344,
-          "mape": 11.981598437510014
+          "mae": 3576.656226796331,
+          "mse": 56265817.98391566,
+          "rmse": 7501.05445813558,
+          "r2": 0.9807621772159617,
+          "mape": 20.126513905943877
         }
       },
       "feature_importance": {},
       "training_samples": 1920,
       "test_samples": 480
     },
-    "thermal_model": {}
+    "thermal_model": {
+      "best_model": "linear",
+      "model_scores": {
+        "random_forest": {
+          "overall_r2": 0.9999787136294799,
+          "target_metrics": {
+            "avg_cpu_temp": {
+              "mae": 0.012742078405052037,
+              "mse": 0.001590140339294668,
+              "rmse": 0.0398765637849435,
+              "r2": 0.9999787136294799,
+              "mape": 0.024838088442535395
+            }
+          }
+        },
+        "gradient_boosting": {
+          "overall_r2": 0.9998737408226429,
+          "target_metrics": {
+            "avg_cpu_temp": {
+              "mae": 0.06919378223900549,
+              "mse": 0.009431847995483826,
+              "rmse": 0.09711770176174797,
+              "r2": 0.9998737408226429,
+              "mape": 0.13108764264141418
+            }
+          }
+        },
+        "linear": {
+          "overall_r2": 1.0,
+          "target_metrics": {
+            "avg_cpu_temp": {
+              "mae": 7.401486830834377e-18,
+              "mse": 2.629536350736706e-32,
+              "rmse": 1.6215845185301646e-16,
+              "r2": 1.0,
+              "mape": 2.3190700264535092e-17
+            }
+          }
+        },
+        "ridge": {
+          "overall_r2": 0.9999997290104637,
+          "target_metrics": {
+            "avg_cpu_temp": {
+              "mae": 0.0035749781118265657,
+              "mse": 2.024353530514136e-05,
+              "rmse": 0.004499281643233879,
+              "r2": 0.9999997290104637,
+              "mape": 0.006907153890155504
+            }
+          }
+        }
+      },
+      "feature_importance": {},
+      "target_names": [
+        "avg_cpu_temp"
+      ],
+      "training_samples": 1920,
+      "test_samples": 480
+    }
   }
 }
