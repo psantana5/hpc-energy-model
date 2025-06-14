@@ -1,0 +1,225 @@
+# HPC Energy Model Alert Rules
+
+groups:
+  - name: hpc.thermal
+    rules:
+      # High CPU temperature alert
+      - alert: HighCPUTemperature
+        expr: hpc_cpu_temperature_celsius > 80
+        for: 2m
+        labels:
+          severity: warning
+          component: thermal
+        annotations:
+          summary: "High CPU temperature detected"
+          description: "CPU temperature on {{ $labels.core }} of node {{ $labels.instance }} is {{ $value }}°C, which is above the 80°C threshold."
+
+      # Critical CPU temperature alert
+      - alert: CriticalCPUTemperature
+        expr: hpc_cpu_temperature_celsius > 90
+        for: 1m
+        labels:
+          severity: critical
+          component: thermal
+        annotations:
+          summary: "Critical CPU temperature detected"
+          description: "CPU temperature on {{ $labels.core }} of node {{ $labels.instance }} is {{ $value }}°C, which is critically high (>90°C)."
+
+      # Thermal throttling detected
+      - alert: ThermalThrottlingActive
+        expr: hpc_thermal_throttling_active == 1
+        for: 1m
+        labels:
+          severity: warning
+          component: thermal
+        annotations:
+          summary: "Thermal throttling detected"
+          description: "Thermal throttling is active on core {{ $labels.core }} of node {{ $labels.instance }}."
+
+      # GPU temperature alert
+      - alert: HighGPUTemperature
+        expr: hpc_gpu_temperature_celsius > 85
+        for: 2m
+        labels:
+          severity: warning
+          component: thermal
+        annotations:
+          summary: "High GPU temperature detected"
+          description: "GPU {{ $labels.gpu_name }} (ID: {{ $labels.gpu_id }}) temperature is {{ $value }}°C, which is above the 85°C threshold."
+
+  - name: hpc.jobs
+    rules:
+      # Long running job alert
+      - alert: LongRunningJob
+        expr: hpc_slurm_job_runtime_seconds > 86400  # 24 hours
+        for: 5m
+        labels:
+          severity: info
+          component: slurm
+        annotations:
+          summary: "Long running job detected"
+          description: "Job {{ $labels.job_id }} by user {{ $labels.user }} has been running for {{ $value | humanizeDuration }}."
+
+      # High job failure rate
+      - alert: HighJobFailureRate
+        expr: |
+          (
+            rate(hpc_slurm_jobs_total{state="FAILED"}[10m]) /
+            rate(hpc_slurm_jobs_total[10m])
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: slurm
+        annotations:
+          summary: "High job failure rate detected"
+          description: "Job failure rate in partition {{ $labels.partition }} is {{ $value | humanizePercentage }} over the last 10 minutes."
+
+      # Job queue buildup
+      - alert: JobQueueBuildup
+        expr: count(hpc_slurm_job_state{job_state="0"}) > 50  # More than 50 pending jobs
+        for: 5m
+        labels:
+          severity: warning
+          component: slurm
+        annotations:
+          summary: "Job queue buildup detected"
+          description: "There are {{ $value }} jobs pending in the queue, which may indicate resource constraints."
+
+      # High energy consumption job
+      - alert: HighEnergyConsumptionJob
+        expr: hpc_slurm_job_energy_estimate_joules > 1000000  # 1MJ
+        for: 2m
+        labels:
+          severity: info
+          component: energy
+        annotations:
+          summary: "High energy consumption job detected"
+          description: "Job {{ $labels.job_id }} of type {{ $labels.job_type }} has consumed {{ $value | humanize }}J of energy."
+
+  - name: hpc.system
+    rules:
+      # High CPU usage
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage on node {{ $labels.instance }} is {{ $value | humanizePercentage }} for more than 5 minutes."
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: |
+          (
+            (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) /
+            node_memory_MemTotal_bytes
+          ) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage on node {{ $labels.instance }} is {{ $value | humanizePercentage }}."
+
+      # Disk space low
+      - alert: DiskSpaceLow
+        expr: |
+          (
+            (node_filesystem_size_bytes - node_filesystem_free_bytes) /
+            node_filesystem_size_bytes
+          ) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "Disk space low"
+          description: "Disk usage on {{ $labels.mountpoint }} of node {{ $labels.instance }} is {{ $value | humanizePercentage }}."
+
+      # Node down
+      - alert: NodeDown
+        expr: up{job="node-exporter"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "Node is down"
+          description: "Node {{ $labels.instance }} has been down for more than 2 minutes."
+
+  - name: hpc.power
+    rules:
+      # High power consumption
+      - alert: HighPowerConsumption
+        expr: hpc_power_consumption_watts{component="cpu"} > 200
+        for: 5m
+        labels:
+          severity: warning
+          component: power
+        annotations:
+          summary: "High power consumption detected"
+          description: "CPU power consumption on node {{ $labels.instance }} is {{ $value }}W, which is above normal levels."
+
+      # Power consumption spike
+      - alert: PowerConsumptionSpike
+        expr: |
+          (
+            hpc_power_consumption_watts -
+            hpc_power_consumption_watts offset 5m
+          ) > 100
+        for: 2m
+        labels:
+          severity: info
+          component: power
+        annotations:
+          summary: "Power consumption spike detected"
+          description: "Power consumption on {{ $labels.component }} of node {{ $labels.instance }} increased by {{ $value }}W in the last 5 minutes."
+
+  - name: hpc.exporters
+    rules:
+      # Exporter down
+      - alert: ExporterDown
+        expr: up{job=~"thermal-exporter|job-exporter"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: monitoring
+        annotations:
+          summary: "HPC exporter is down"
+          description: "{{ $labels.job }} on {{ $labels.instance }} has been down for more than 2 minutes."
+
+      # High scrape duration
+      - alert: HighScrapeDuration
+        expr: scrape_duration_seconds{job=~"thermal-exporter|job-exporter"} > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: monitoring
+        annotations:
+          summary: "High scrape duration detected"
+          description: "Scraping {{ $labels.job }} on {{ $labels.instance }} is taking {{ $value }}s, which is unusually long."
+
+      # Missing metrics
+      - alert: MissingThermalMetrics
+        expr: absent(hpc_cpu_temperature_celsius)
+        for: 5m
+        labels:
+          severity: warning
+          component: monitoring
+        annotations:
+          summary: "Thermal metrics are missing"
+          description: "CPU temperature metrics have not been received for more than 5 minutes."
+
+      - alert: MissingJobMetrics
+        expr: absent(hpc_slurm_job_state)
+        for: 10m
+        labels:
+          severity: warning
+          component: monitoring
+        annotations:
+          summary: "Job metrics are missing"
+          description: "Slurm job metrics have not been received for more than 10 minutes."
