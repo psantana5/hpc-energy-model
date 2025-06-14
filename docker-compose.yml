@@ -1,34 +1,63 @@
 version: '3.8'
 
 services:
-  # TimescaleDB for time series data
+  # TimescaleDB for time-series data storage
   timescaledb:
-    image: timescale/timescaledb:latest-pg15
+    image: timescale/timescaledb:latest-pg14
     container_name: hpc-timescaledb
     environment:
-      POSTGRES_DB: hpc_energy
-      POSTGRES_USER: hpc_user
-      POSTGRES_PASSWORD: hpc_password
-      TIMESCALEDB_TELEMETRY: 'off'
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: ${TIMESCALE_DB:-hpc_energy}
+      POSTGRES_USER: ${TIMESCALE_USER:-postgres}
+      POSTGRES_PASSWORD: ${TIMESCALE_PASS:-password}
+      POSTGRES_INITDB_ARGS: "-c shared_preload_libraries=timescaledb"
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
-      - ./infrastructure/timescaledb/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./logs/timescaledb:/var/log/postgresql
+    ports:
+      - "${TIMESCALE_PORT:-5432}:5432"
     networks:
       - hpc-network
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${TIMESCALE_USER:-postgres} -d ${TIMESCALE_DB:-hpc_energy}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for caching and session storage
+  redis:
+    image: redis:7-alpine
+    container_name: hpc-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-hpc_redis_pass}
+    volumes:
+      - redis_data:/data
+      - ./logs/redis:/var/log/redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      - hpc-network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # Prometheus for metrics collection
   prometheus:
     image: prom/prometheus:latest
     container_name: hpc-prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./infrastructure/prometheus/rules:/etc/prometheus/rules
-      - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -36,167 +65,317 @@ services:
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--storage.tsdb.retention.time=30d'
       - '--web.enable-lifecycle'
+      - '--log.level=info'
+      - '--log.format=json'
+    volumes:
+      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./infrastructure/prometheus/rules:/etc/prometheus/rules
+      - prometheus_data:/prometheus
+      - ./logs/prometheus:/var/log/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
     networks:
       - hpc-network
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Alertmanager for handling alerts
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: hpc-alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:9093'
+      - '--log.level=info'
+      - '--log.format=json'
+    volumes:
+      - ./infrastructure/prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - alertmanager_data:/alertmanager
+      - ./logs/alertmanager:/var/log/alertmanager
+    ports:
+      - "${ALERTMANAGER_PORT:-9093}:9093"
+    networks:
+      - hpc-network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # Grafana for visualization
   grafana:
     image: grafana/grafana:latest
     container_name: hpc-grafana
-    ports:
-      - "3000:3000"
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: admin
-      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: false
+      GF_LOGGING_LEVEL: info
+      GF_LOGGING_MODE: console file
+      GF_LOGGING_FORMAT: json
+      GF_PATHS_LOGS: /var/log/grafana
+      GF_DATABASE_TYPE: postgres
+      GF_DATABASE_HOST: timescaledb:5432
+      GF_DATABASE_NAME: ${TIMESCALE_DB:-hpc_energy}
+      GF_DATABASE_USER: ${TIMESCALE_USER:-postgres}
+      GF_DATABASE_PASSWORD: ${TIMESCALE_PASS:-password}
+      GF_SESSION_PROVIDER: redis
+      GF_SESSION_PROVIDER_CONFIG: addr=redis:6379,pool_size=100,db=grafana
     volumes:
       - grafana_data:/var/lib/grafana
       - ./infrastructure/grafana/provisioning:/etc/grafana/provisioning
-      - ./infrastructure/grafana/dashboards:/var/lib/grafana/dashboards
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+      - ./logs/grafana:/var/log/grafana
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
     networks:
       - hpc-network
     restart: unless-stopped
     depends_on:
       - timescaledb
       - prometheus
+      - redis
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Energy Prediction API
+  energy-api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: hpc-energy-api
+    environment:
+      FLASK_ENV: ${API_ENV:-production}
+      FLASK_DEBUG: ${API_DEBUG:-false}
+      TIMESCALE_HOST: timescaledb
+      TIMESCALE_PORT: 5432
+      TIMESCALE_DB: ${TIMESCALE_DB:-hpc_energy}
+      TIMESCALE_USER: ${TIMESCALE_USER:-postgres}
+      TIMESCALE_PASS: ${TIMESCALE_PASS:-password}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-hpc_redis_pass}
+      MODEL_PATH: /app/models
+      LOG_LEVEL: ${API_LOG_LEVEL:-INFO}
+      LOG_FORMAT: json
+    volumes:
+      - ./models:/app/models
+      - ./logs/api:/app/logs
+      - api_data:/app/data
+    ports:
+      - "${API_PORT:-5000}:5000"
+    networks:
+      - hpc-network
+    restart: unless-stopped
+    depends_on:
+      - timescaledb
+      - redis
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # Node Exporter for system metrics
   node-exporter:
     image: prom/node-exporter:latest
     container_name: hpc-node-exporter
-    ports:
-      - "9100:9100"
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
     command:
       - '--path.procfs=/host/proc'
       - '--path.rootfs=/rootfs'
       - '--path.sysfs=/host/sys'
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+      - '--log.level=info'
+      - '--log.format=json'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+      - ./logs/node-exporter:/var/log/node-exporter
+    ports:
+      - "9100:9100"
     networks:
       - hpc-network
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9100/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  # Custom thermal exporter
+  # Thermal Exporter for temperature monitoring
   thermal-exporter:
     build:
       context: ./monitoring/exporters/thermal-exporter
       dockerfile: Dockerfile
     container_name: hpc-thermal-exporter
-    ports:
-      - "9200:9200"
-    volumes:
-      - /sys/class/thermal:/sys/class/thermal:ro
-      - /proc/cpuinfo:/proc/cpuinfo:ro
     environment:
-      EXPORTER_PORT: 9200
-      POLLING_INTERVAL: 5
+      LOG_LEVEL: ${THERMAL_LOG_LEVEL:-INFO}
+      LOG_FORMAT: json
+      THERMAL_ZONES_PATH: /host/sys/class/thermal
+      HWMON_PATH: /host/sys/class/hwmon
+      METRICS_PORT: 9101
+    volumes:
+      - /sys/class/thermal:/host/sys/class/thermal:ro
+      - /sys/class/hwmon:/host/sys/class/hwmon:ro
+      - ./logs/thermal-exporter:/app/logs
+    ports:
+      - "9101:9101"
     networks:
       - hpc-network
     restart: unless-stopped
     privileged: true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9101/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  # Custom job metrics exporter
+  # Job Exporter for Slurm job metrics
   job-exporter:
     build:
       context: ./monitoring/exporters/job-exporter
       dockerfile: Dockerfile
     container_name: hpc-job-exporter
-    ports:
-      - "9300:9300"
     environment:
-      EXPORTER_PORT: 9300
-      SLURM_CONF_PATH: /etc/slurm/slurm.conf
-      TIMESCALEDB_HOST: timescaledb
-      TIMESCALEDB_PORT: 5432
-      TIMESCALEDB_DB: hpc_energy
-      TIMESCALEDB_USER: hpc_user
-      TIMESCALEDB_PASSWORD: hpc_password
+      LOG_LEVEL: ${JOB_LOG_LEVEL:-INFO}
+      LOG_FORMAT: json
+      SLURM_CONF_PATH: /etc/slurm
+      METRICS_PORT: 9102
+      TIMESCALE_HOST: timescaledb
+      TIMESCALE_PORT: 5432
+      TIMESCALE_DB: ${TIMESCALE_DB:-hpc_energy}
+      TIMESCALE_USER: ${TIMESCALE_USER:-postgres}
+      TIMESCALE_PASS: ${TIMESCALE_PASS:-password}
     volumes:
       - /etc/slurm:/etc/slurm:ro
       - /var/log/slurm:/var/log/slurm:ro
+      - ./logs/job-exporter:/app/logs
+    ports:
+      - "9102:9102"
     networks:
       - hpc-network
     restart: unless-stopped
     depends_on:
       - timescaledb
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9102/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  # Energy prediction API
-  energy-predictor-api:
-    build:
-      context: ./api/energy-predictor
-      dockerfile: Dockerfile
-    container_name: hpc-energy-predictor
-    ports:
-      - "8000:8000"
+  # Log aggregation and management
+  fluentd:
+    image: fluent/fluentd:v1.16-debian-1
+    container_name: hpc-fluentd
     environment:
-      TIMESCALEDB_HOST: timescaledb
-      TIMESCALEDB_PORT: 5432
-      TIMESCALEDB_DB: hpc_energy
-      TIMESCALEDB_USER: hpc_user
-      TIMESCALEDB_PASSWORD: hpc_password
-      MODEL_PATH: /app/models
+      FLUENTD_CONF: fluentd.conf
+      FLUENTD_OPT: "-v"
     volumes:
-      - ./ml-models/trained:/app/models:ro
-      - ./results/datasets:/app/data:ro
+      - ./infrastructure/fluentd/fluentd.conf:/fluentd/etc/fluentd.conf
+      - ./logs:/var/log/hpc:ro
+      - fluentd_data:/fluentd/log
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
     networks:
       - hpc-network
     restart: unless-stopped
     depends_on:
       - timescaledb
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
 
-  # Jupyter Lab for analysis
-  jupyter:
-    image: jupyter/scipy-notebook:latest
-    container_name: hpc-jupyter
-    ports:
-      - "8888:8888"
-    environment:
-      JUPYTER_ENABLE_LAB: 'yes'
-      JUPYTER_TOKEN: 'hpc-energy-analysis'
+  # Nginx reverse proxy for unified access
+  nginx:
+    image: nginx:alpine
+    container_name: hpc-nginx
     volumes:
-      - ./ml-models:/home/jovyan/ml-models
-      - ./results:/home/jovyan/results
-      - ./scripts:/home/jovyan/scripts
-      - jupyter_data:/home/jovyan/work
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./infrastructure/nginx/ssl:/etc/nginx/ssl
+      - ./logs/nginx:/var/log/nginx
+    ports:
+      - "80:80"
+      - "443:443"
     networks:
       - hpc-network
     restart: unless-stopped
-
-  # Redis for caching and job queues
-  redis:
-    image: redis:7-alpine
-    container_name: hpc-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - hpc-network
-    restart: unless-stopped
-
-  # Alertmanager for notifications
-  alertmanager:
-    image: prom/alertmanager:latest
-    container_name: hpc-alertmanager
-    ports:
-      - "9093:9093"
-    volumes:
-      - ./infrastructure/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
-      - alertmanager_data:/alertmanager
-    networks:
-      - hpc-network
-    restart: unless-stopped
+    depends_on:
+      - grafana
+      - prometheus
+      - energy-api
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   timescaledb_data:
-  prometheus_data:
-  grafana_data:
-  jupyter_data:
+    driver: local
   redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
   alertmanager_data:
+    driver: local
+  grafana_data:
+    driver: local
+  api_data:
+    driver: local
+  fluentd_data:
+    driver: local
 
 networks:
   hpc-network:
@@ -204,3 +383,4 @@ networks:
     ipam:
       config:
         - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
