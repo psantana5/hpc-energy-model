@@ -1,0 +1,57 @@
+Region: eu-west-1
+Image:
+  Os: ubuntu2004
+HeadNode:
+  InstanceType: c5.xlarge
+  Networking:
+    SubnetId: subnet-05b2bfa2a28db8cd3
+  Ssh:
+    KeyName: hpc-energy-keypair
+  LocalStorage:
+    RootVolume:
+      Size: 100
+      VolumeType: gp3
+  Iam:
+    AdditionalIamPolicies:
+      - Policy: arn:aws:iam::104398007985:policy/ParallelClusterS3Policy-hpc-energy-cluster
+  CustomActions:
+    OnNodeStart:
+      Script: s3://hpc-energy-model-104398007985-eu-west-1/shared/scripts/node-setup.sh
+Scheduling:
+  Scheduler: slurm
+  SlurmQueues:
+    - Name: compute
+      ComputeResources:
+        - Name: compute-resource
+          InstanceType: c5.xlarge
+          MinCount: 0
+          MaxCount: 10
+      Networking:
+        SubnetIds:
+          - subnet-05b2bfa2a28db8cd3
+      Iam:
+        AdditionalIamPolicies:
+          - Policy: arn:aws:iam::104398007985:policy/ParallelClusterS3Policy-hpc-energy-cluster
+SharedStorage:
+  - MountDir: /shared
+    Name: shared-storage
+    StorageType: FsxLustre
+    FsxLustreSettings:
+      StorageCapacity: 1200
+      DeploymentType: SCRATCH_2
+      ImportPath: s3://hpc-energy-model-104398007985-eu-west-1/shared/
+      ExportPath: s3://hpc-energy-model-104398007985-eu-west-1/shared/
+Monitoring:
+  DetailedMonitoring: true
+  Logs:
+    CloudWatch:
+      Enabled: true
+      RetentionInDays: 14
+# AdditionalPackages:
+#   IntelSoftware:
+#     IntelHpcPlatform: true
+Tags:
+  - Key: Project
+    Value: HPC-Energy-Model
+  - Key: Environment
+    Value: Development
