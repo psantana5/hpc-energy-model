@@ -1,17 +1,17 @@
 # Modelado y Predicción del Consumo Energético en Clústeres HPC
 
-## 📋 Descripción del Proyecto
+## Descripción del Proyecto
 
 Este proyecto de Trabajo de Fin de Grado (TFG) en Ingeniería Informática tiene como objetivo desarrollar un sistema completo para el modelado y predicción del consumo energético en clústeres de computación de alto rendimiento (HPC) mediante el análisis de patrones térmicos y carga de trabajo.
 
-### 🎯 Objetivos Principales
+### Objetivos Principales
 
 - **Recolección de métricas**: Capturar datos térmicos, de carga de trabajo y consumo energético de jobs HPC
 - **Modelado predictivo**: Desarrollar algoritmos de machine learning para predecir el consumo energético por job
 - **Visualización avanzada**: Crear dashboards interactivos con Grafana para análisis de correlaciones
 - **Optimización energética**: Proporcionar recomendaciones inteligentes para la colocación eficiente de jobs
 
-## 🏗️ Arquitectura del Sistema
+## Arquitectura del Sistema
 
 ### Infraestructura Base
 - **Proxmox**: Plataforma de virtualización con CPU passthrough
@@ -32,7 +32,7 @@ Este proyecto de Trabajo de Fin de Grado (TFG) en Ingeniería Informática tiene
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
-## 📊 Dataset y Métricas
+## Dataset y Métricas
 
 Cada job ejecutado genera las siguientes métricas:
 
@@ -49,7 +49,7 @@ Cada job ejecutado genera las siguientes métricas:
 | `memory_usage` | Uso de memoria promedio | MB |
 | `cpu_utilization` | Utilización de CPU promedio | % |
 
-## 🗂️ Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
 hpc-energy-model/
@@ -109,7 +109,7 @@ hpc-energy-model/
     └── reports/
 ```
 
-## 🚀 Instalación y Configuración
+## Instalación y Configuración
 
 ### Prerrequisitos
 - Proxmox VE 7.0+
@@ -140,7 +140,7 @@ hpc-energy-model/
    docker-compose up -d
    ```
 
-## 📈 Metodología de Desarrollo
+## Metodología de Desarrollo
 
 ### Fase 1: Preparación del Entorno (Semanas 1-3)
 - [ ] Configuración de VMs en Proxmox
@@ -166,7 +166,7 @@ hpc-energy-model/
 - [ ] API para predicciones en tiempo real
 - [ ] Documentación y presentación final
 
-## 🔧 Tecnologías Utilizadas
+## Tecnologías Utilizadas
 
 - **Orquestación**: Slurm, Proxmox
 - **Monitorización**: Prometheus, Node Exporter, exportadores personalizados
@@ -176,7 +176,7 @@ hpc-energy-model/
 - **Desarrollo**: Python, Bash, Docker
 - **Testing**: pytest, unittest
 
-## 📊 Resultados Esperados
+## Resultados Esperados
 
 - **Dataset completo** con +10,000 jobs ejecutados
 - **Modelo predictivo** con precisión >85% en consumo energético
@@ -184,7 +184,7 @@ hpc-energy-model/
 - **Motor de recomendaciones** para optimización de scheduling
 - **Documentación técnica** completa del sistema
 
-## 🤝 Contribución
+## Contribución
 
 Este proyecto está desarrollado como TFG. Para sugerencias o mejoras:
 
@@ -194,17 +194,17 @@ Este proyecto está desarrollado como TFG. Para sugerencias o mejoras:
 4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
 5. Crear Pull Request
 
-## 📄 Licencia
+## Licencia
 
 Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para detalles.
 
-## 👨‍💻 Autor
+## Autor
 
-**[Tu Nombre]** - Estudiante de Ingeniería Informática  
-Universidad: [Nombre de tu Universidad]  
+**[Pau Santana]** - Estudiante de Ingeniería Informática  
+Universidad: [UOC (Universitat Oberta de Catalunya)]  
 Email: [tu-email@universidad.edu]
 
-## 🙏 Agradecimientos
+## Agradecimientos
 
 - Director/a del TFG: [Nombre del director]
 - Departamento de [Nombre del departamento]
