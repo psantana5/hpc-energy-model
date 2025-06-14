@@ -1,0 +1,5 @@
+[2025-06-14 18:15:01] [INFO] Starting HPC Energy Model deployment script
+[2025-06-14 18:15:01] [INFO] Platform: baremetal, SSL: False, Dev Mode: False
+[2025-06-14 18:15:01] [INFO] Creating necessary directories...
+[2025-06-14 18:15:01] [SUCCESS] Directories created
+[2025-06-14 18:15:02] [SUCCESS] Services started

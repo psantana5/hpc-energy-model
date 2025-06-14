@@ -26,7 +26,7 @@ param(
     [switch]$Quick,
     
     [Parameter()]
-    [switch]$Verbose,
+    [switch]$VerboseOutput,
     
     [Parameter()]
     [switch]$Follow,
@@ -108,14 +108,14 @@ Options:
     -Dev            Development mode
     -NoLogs         Disable advanced logging
     -Quick          Quick deployment (skip optional components)
-    -Verbose        Enable verbose output
+    -VerboseOutput  Enable verbose output
     -Follow         Follow logs (for logs command)
     -Compress       Compress backup (for backup command)
     -Help           Show this help message
 
 Examples:
     .\deploy.ps1 deploy -Platform baremetal -SSL
-    .\deploy.ps1 start -Verbose
+    .\deploy.ps1 start -VerboseOutput
     .\deploy.ps1 logs -Follow
     .\deploy.ps1 backup -Compress
 
@@ -627,7 +627,7 @@ function Main {
     Write-Info "Platform: $Platform, SSL: $SSL, Dev Mode: $Dev"
     
     # Set verbose mode
-    if ($Verbose) {
+    if ($VerboseOutput) {
         $VerbosePreference = 'Continue'
     }
     
