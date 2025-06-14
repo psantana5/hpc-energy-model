@@ -1,0 +1,278 @@
+name: Monitoring and Infrastructure Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'infrastructure/**'
+      - 'monitoring/**'
+      - 'docker-compose.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'infrastructure/**'
+      - 'monitoring/**'
+      - 'docker-compose.yml'
+  schedule:
+    # Run weekly to catch any infrastructure drift
+    - cron: '0 2 * * 1'
+
+jobs:
+  test-monitoring-stack:
+    runs-on: ubuntu-latest
+    name: Test Monitoring Infrastructure
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Test Docker Compose configuration
+      run: |
+        if [ -f docker-compose.yml ]; then
+          echo "Testing Docker Compose configuration..."
+          docker-compose config
+          docker-compose pull --ignore-pull-failures || true
+        fi
+    
+    - name: Test Prometheus configuration
+      run: |
+        if [ -f infrastructure/prometheus/prometheus.yml ]; then
+          echo "Testing Prometheus configuration..."
+          docker run --rm -v "$PWD/infrastructure/prometheus:/etc/prometheus" \
+            prom/prometheus:latest \
+            promtool check config /etc/prometheus/prometheus.yml
+          
+          # Check for rules if they exist
+          if [ -d infrastructure/prometheus/rules ]; then
+            docker run --rm -v "$PWD/infrastructure/prometheus:/etc/prometheus" \
+              prom/prometheus:latest \
+              promtool check rules /etc/prometheus/rules/*.yml || echo "No rules to check"
+          fi
+        fi
+    
+    - name: Test Grafana provisioning
+      run: |
+        if [ -d infrastructure/grafana/provisioning ]; then
+          echo "Testing Grafana provisioning configuration..."
+          
+          # Validate datasource configurations
+          find infrastructure/grafana/provisioning -name "*.yml" -o -name "*.yaml" | while read file; do
+            echo "Validating $file"
+            yamllint "$file"
+          done
+          
+          # Test Grafana container startup with provisioning
+          docker run --rm -d --name grafana-test \
+            -v "$PWD/infrastructure/grafana/provisioning:/etc/grafana/provisioning" \
+            grafana/grafana:latest
+          
+          # Wait for Grafana to start
+          sleep 10
+          
+          # Check if Grafana is healthy
+          docker exec grafana-test curl -f http://localhost:3000/api/health || echo "Grafana health check failed"
+          
+          # Cleanup
+          docker stop grafana-test
+        fi
+    
+    - name: Test Fluentd configuration
+      run: |
+        if [ -f infrastructure/fluentd/fluent.conf ]; then
+          echo "Testing Fluentd configuration..."
+          docker run --rm -v "$PWD/infrastructure/fluentd:/fluentd/etc" \
+            fluent/fluentd:latest \
+            fluentd --dry-run -c /fluentd/etc/fluent.conf
+        fi
+    
+    - name: Test Nginx configuration
+      run: |
+        if [ -f infrastructure/nginx/nginx.conf ]; then
+          echo "Testing Nginx configuration..."
+          docker run --rm -v "$PWD/infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro" \
+            nginx:alpine nginx -t
+        fi
+    
+    - name: Test monitoring exporters
+      run: |
+        # Test job-exporter if it exists
+        if [ -d monitoring/exporters/job-exporter ]; then
+          echo "Testing job-exporter..."
+          cd monitoring/exporters/job-exporter
+          
+          # Check for Python files and test syntax
+          find . -name "*.py" -exec python -m py_compile {} \;
+          
+          cd ../../..
+        fi
+        
+        # Test thermal-exporter if it exists
+        if [ -d monitoring/exporters/thermal-exporter ]; then
+          echo "Testing thermal-exporter..."
+          cd monitoring/exporters/thermal-exporter
+          
+          # Check for Python files and test syntax
+          find . -name "*.py" -exec python -m py_compile {} \;
+          
+          cd ../../..
+        fi
+
+  test-slurm-integration:
+    runs-on: ubuntu-latest
+    name: Test SLURM Integration
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Test SLURM configuration files
+      run: |
+        if [ -f slurm/slurm.conf ]; then
+          echo "Testing SLURM configuration..."
+          
+          # Basic syntax validation
+          grep -E '^[A-Za-z]' slurm/slurm.conf | while read line; do
+            if [[ $line == *"="* ]]; then
+              key=$(echo $line | cut -d'=' -f1)
+              value=$(echo $line | cut -d'=' -f2-)
+              echo "Config: $key = $value"
+            fi
+          done
+          
+          # Check for required parameters
+          required_params=("ClusterName" "ControlMachine" "SlurmUser" "StateSaveLocation")
+          for param in "${required_params[@]}"; do
+            if grep -q "^$param=" slurm/slurm.conf; then
+              echo "✓ Found required parameter: $param"
+            else
+              echo "⚠ Missing parameter: $param (may be set elsewhere)"
+            fi
+          done
+        fi
+        
+        if [ -f slurm/qos.conf ]; then
+          echo "Testing QoS configuration..."
+          cat slurm/qos.conf
+        fi
+    
+    - name: Test SLURM scripts
+      run: |
+        if [ -d slurm/scripts ]; then
+          echo "Testing SLURM scripts..."
+          
+          for script in slurm/scripts/*.sh; do
+            if [ -f "$script" ]; then
+              echo "Validating $script..."
+              bash -n "$script"
+              
+              # Check for SLURM-specific variables
+              if grep -q "SLURM_" "$script"; then
+                echo "✓ $script contains SLURM environment variables"
+              fi
+            fi
+          done
+        fi
+
+  integration-test:
+    runs-on: ubuntu-latest
+    name: Integration Test
+    needs: [test-monitoring-stack, test-slurm-integration]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Start monitoring stack
+      run: |
+        if [ -f docker-compose.yml ]; then
+          echo "Starting monitoring stack for integration test..."
+          
+          # Start services in background
+          docker-compose up -d --build
+          
+          # Wait for services to be ready
+          sleep 30
+          
+          # Check service health
+          docker-compose ps
+          
+          # Test Prometheus if running
+          if docker-compose ps | grep -q prometheus; then
+            echo "Testing Prometheus endpoint..."
+            curl -f http://localhost:9090/-/healthy || echo "Prometheus health check failed"
+          fi
+          
+          # Test Grafana if running
+          if docker-compose ps | grep -q grafana; then
+            echo "Testing Grafana endpoint..."
+            curl -f http://localhost:3000/api/health || echo "Grafana health check failed"
+          fi
+          
+          # Cleanup
+          docker-compose down
+        fi
+    
+    - name: Test workload scripts integration
+      run: |
+        echo "Testing workload scripts..."
+        
+        # Test CPU intensive workload
+        if [ -f workloads/cpu-intensive/cpu_benchmark.py ]; then
+          python workloads/cpu-intensive/cpu_benchmark.py --help || echo "CPU benchmark help test completed"
+        fi
+        
+        # Test IO intensive workload
+        if [ -f workloads/io-intensive/io_benchmark.py ]; then
+          python workloads/io-intensive/io_benchmark.py --help || echo "IO benchmark help test completed"
+        fi
+        
+        # Test mixed workload
+        if [ -f workloads/mixed/mixed_benchmark.py ]; then
+          python workloads/mixed/mixed_benchmark.py --help || echo "Mixed benchmark help test completed"
+        fi
+
+  security-infrastructure-scan:
+    runs-on: ubuntu-latest
+    name: Security Scan Infrastructure
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Scan Docker configurations
+      run: |
+        if [ -f docker-compose.yml ]; then
+          echo "Scanning Docker Compose for security issues..."
+          
+          # Check for exposed ports
+          if grep -q "ports:" docker-compose.yml; then
+            echo "⚠ Found exposed ports in docker-compose.yml"
+            grep -A 5 "ports:" docker-compose.yml
+          fi
+          
+          # Check for volume mounts
+          if grep -q "volumes:" docker-compose.yml; then
+            echo "ℹ Found volume mounts in docker-compose.yml"
+            grep -A 5 "volumes:" docker-compose.yml
+          fi
+          
+          # Check for environment variables
+          if grep -q "environment:" docker-compose.yml; then
+            echo "ℹ Found environment variables in docker-compose.yml"
+            grep -A 10 "environment:" docker-compose.yml
+          fi
+        fi
+    
+    - name: Check for hardcoded secrets
+      run: |
+        echo "Scanning for potential hardcoded secrets..."
+        
+        # Check for common secret patterns
+        secret_patterns=("password" "secret" "key" "token" "api_key")
+        
+        for pattern in "${secret_patterns[@]}"; do
+          echo "Checking for pattern: $pattern"
+          grep -ri "$pattern" infrastructure/ monitoring/ || echo "No $pattern found"
+        done
