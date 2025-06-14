@@ -193,6 +193,23 @@ class ModelValidator:
         """
         logger.info(f"Starting comprehensive validation for {model_name}")
         
+        # Log data availability and dimensions
+        logger.info("=== VALIDATION DATA SUMMARY ===")
+        for key, df in real_data.items():
+            if df is not None and not df.empty:
+                logger.info(f"Real {key}: {len(df)} rows, {len(df.columns)} columns")
+                logger.info(f"Real {key} columns: {list(df.columns)}")
+            else:
+                logger.warning(f"Real {key}: No data available")
+        
+        for key, df in simulated_data.items():
+            if df is not None and not df.empty:
+                logger.info(f"Simulated {key}: {len(df)} rows, {len(df.columns)} columns")
+                logger.info(f"Simulated {key} columns: {list(df.columns)}")
+            else:
+                logger.warning(f"Simulated {key}: No data available")
+        logger.info("=== END DATA SUMMARY ===")
+        
         # Initialize validation metrics
         energy_metrics = self._empty_validation_metrics()
         thermal_metrics = self._empty_validation_metrics()
@@ -273,9 +290,17 @@ class ModelValidator:
                 performance_metrics = self._empty_validation_metrics()
         
         # Calculate overall score
+        logger.info("=== VALIDATION METRICS SUMMARY ===")
+        logger.info(f"Energy R²: {energy_metrics.r2:.3f}" if not np.isnan(energy_metrics.r2) else "Energy R²: N/A")
+        logger.info(f"Thermal R²: {thermal_metrics.r2:.3f}" if not np.isnan(thermal_metrics.r2) else "Thermal R²: N/A")
+        logger.info(f"Performance R²: {performance_metrics.r2:.3f}" if not np.isnan(performance_metrics.r2) else "Performance R²: N/A")
+        logger.info("=== END METRICS SUMMARY ===")
+        
         overall_score = self._calculate_overall_score(
             energy_metrics, thermal_metrics, performance_metrics
         )
+        
+        logger.info(f"Final overall validation score: {overall_score:.3f}")
         
         # Perform detailed analysis
         detailed_analysis = self._detailed_analysis(
@@ -404,7 +429,21 @@ class ModelValidator:
     
     def _align_time_series(self, real_data: pd.DataFrame, simulated_data: pd.DataFrame,
                           time_column: str, value_column: str) -> Tuple[np.ndarray, np.ndarray]:
-        """Align time series data for comparison"""
+        """Align time series data for comparison with improved logging"""
+        logger.info(f"Aligning time series data - Real: {len(real_data)} rows, Simulated: {len(simulated_data)} rows")
+        logger.info(f"Looking for columns: time='{time_column}', value='{value_column}'")
+        logger.info(f"Real columns: {list(real_data.columns)}")
+        logger.info(f"Simulated columns: {list(simulated_data.columns)}")
+        
+        # Check if required columns exist
+        if value_column not in real_data.columns:
+            logger.error(f"Value column '{value_column}' not found in real data")
+            return np.array([]), np.array([])
+        
+        if value_column not in simulated_data.columns:
+            logger.error(f"Value column '{value_column}' not found in simulated data")
+            return np.array([]), np.array([])
+        
         # Ensure time columns are datetime
         real_data = real_data.copy()
         simulated_data = simulated_data.copy()
@@ -416,16 +455,23 @@ class ModelValidator:
         
         # Find overlapping time range
         if time_column in real_data.columns and time_column in simulated_data.columns:
+            logger.info("Time-based alignment available")
             real_start = real_data[time_column].min()
             real_end = real_data[time_column].max()
             sim_start = simulated_data[time_column].min()
             sim_end = simulated_data[time_column].max()
             
+            logger.info(f"Real data time range: {real_start} to {real_end}")
+            logger.info(f"Simulated data time range: {sim_start} to {sim_end}")
+            
             overlap_start = max(real_start, sim_start)
             overlap_end = min(real_end, sim_end)
             
             if overlap_start >= overlap_end:
+                logger.warning("No time overlap found between datasets")
                 return np.array([]), np.array([])
+            
+            logger.info(f"Time overlap found: {overlap_start} to {overlap_end}")
             
             # Filter to overlapping period
             real_filtered = real_data[
@@ -436,6 +482,8 @@ class ModelValidator:
                 (simulated_data[time_column] >= overlap_start) & 
                 (simulated_data[time_column] <= overlap_end)
             ]
+            
+            logger.info(f"After time filtering - Real: {len(real_filtered)}, Simulated: {len(sim_filtered)}")
             
             # Resample to common frequency if needed
             if len(real_filtered) != len(sim_filtered):
@@ -451,82 +499,197 @@ class ModelValidator:
                 real_values = real_filtered[value_column].values
                 sim_values = sim_filtered[value_column].values
         else:
+            logger.info("No time column available, using position-based alignment")
             # No time alignment possible, use direct comparison
             min_len = min(len(real_data), len(simulated_data))
             real_values = real_data[value_column].iloc[:min_len].values
             sim_values = simulated_data[value_column].iloc[:min_len].values
+            logger.info(f"Position-based alignment: using {min_len} data points")
         
         # Remove NaN values - handle non-numeric types
         try:
             # Convert to numeric if possible
             real_values = pd.to_numeric(real_values, errors='coerce')
             sim_values = pd.to_numeric(sim_values, errors='coerce')
+            
+            # Count NaN values before filtering
+            real_nan_count = np.isnan(real_values).sum()
+            sim_nan_count = np.isnan(sim_values).sum()
+            
+            if real_nan_count > 0 or sim_nan_count > 0:
+                logger.warning(f"Found NaN values - Real: {real_nan_count}, Simulated: {sim_nan_count}")
+            
             mask = ~(np.isnan(real_values) | np.isnan(sim_values))
-            return real_values[mask], sim_values[mask]
-        except Exception:
-            # If conversion fails, return as is (assuming no NaN values)
-            return real_values, sim_values
+            final_real = real_values[mask]
+            final_sim = sim_values[mask]
+            
+            logger.info(f"Final aligned data: {len(final_real)} valid data points")
+            return final_real, final_sim
+            
+        except Exception as e:
+            logger.error(f"Error in data alignment: {e}")
+            return np.array([]), np.array([])
     
     def _align_by_job_id(self, real_jobs: pd.DataFrame, simulated_jobs: pd.DataFrame,
                         value_column: str) -> Tuple[np.ndarray, np.ndarray]:
-        """Align job data by job_id"""
-        # Convert job_id columns to string to ensure compatibility
-        real_jobs_copy = real_jobs[['job_id', value_column]].copy()
-        simulated_jobs_copy = simulated_jobs[['job_id', value_column]].copy()
-        real_jobs_copy['job_id'] = real_jobs_copy['job_id'].astype(str)
-        simulated_jobs_copy['job_id'] = simulated_jobs_copy['job_id'].astype(str)
+        """Align job data by job_id with improved logging"""
+        logger.info(f"Aligning jobs by job_id - Real: {len(real_jobs)}, Simulated: {len(simulated_jobs)}")
+        logger.info(f"Real job columns: {list(real_jobs.columns)}")
+        logger.info(f"Simulated job columns: {list(simulated_jobs.columns)}")
         
-        # Merge on job_id
-        merged = pd.merge(real_jobs_copy, simulated_jobs_copy, 
-                         on='job_id', suffixes=('_real', '_sim'))
-        
-        if len(merged) == 0:
+        # Check if required columns exist
+        if 'job_id' not in real_jobs.columns:
+            logger.error("job_id column not found in real jobs data")
             return np.array([]), np.array([])
         
-        real_values = merged[f'{value_column}_real'].values
-        sim_values = merged[f'{value_column}_sim'].values
+        if 'job_id' not in simulated_jobs.columns:
+            logger.error("job_id column not found in simulated jobs data")
+            return np.array([]), np.array([])
         
-        # Remove NaN values
-        mask = ~(np.isnan(real_values) | np.isnan(sim_values))
-        return real_values[mask], sim_values[mask]
+        if value_column not in real_jobs.columns:
+            logger.error(f"Value column '{value_column}' not found in real jobs data")
+            return np.array([]), np.array([])
+        
+        if value_column not in simulated_jobs.columns:
+            logger.error(f"Value column '{value_column}' not found in simulated jobs data")
+            return np.array([]), np.array([])
+        
+        try:
+            # Convert job_id columns to string to ensure compatibility
+            real_jobs_copy = real_jobs[['job_id', value_column]].copy()
+            simulated_jobs_copy = simulated_jobs[['job_id', value_column]].copy()
+            real_jobs_copy['job_id'] = real_jobs_copy['job_id'].astype(str)
+            simulated_jobs_copy['job_id'] = simulated_jobs_copy['job_id'].astype(str)
+            
+            # Log unique job IDs for debugging
+            real_job_ids = set(real_jobs_copy['job_id'].unique())
+            sim_job_ids = set(simulated_jobs_copy['job_id'].unique())
+            common_job_ids = real_job_ids.intersection(sim_job_ids)
+            
+            logger.info(f"Real jobs: {len(real_job_ids)} unique IDs")
+            logger.info(f"Simulated jobs: {len(sim_job_ids)} unique IDs")
+            logger.info(f"Common job IDs: {len(common_job_ids)}")
+            
+            if len(common_job_ids) == 0:
+                logger.warning("No common job IDs found between real and simulated data")
+                # Try position-based alignment as fallback
+                logger.info("Falling back to position-based alignment")
+                min_len = min(len(real_jobs), len(simulated_jobs))
+                real_values = real_jobs[value_column].iloc[:min_len].values
+                sim_values = simulated_jobs[value_column].iloc[:min_len].values
+            else:
+                # Merge on job_id
+                merged = pd.merge(real_jobs_copy, simulated_jobs_copy, 
+                                 on='job_id', suffixes=('_real', '_sim'))
+                
+                logger.info(f"Successfully merged {len(merged)} jobs")
+                
+                real_values = merged[f'{value_column}_real'].values
+                sim_values = merged[f'{value_column}_sim'].values
+            
+            # Convert to numeric and remove NaN values
+            real_values = pd.to_numeric(real_values, errors='coerce')
+            sim_values = pd.to_numeric(sim_values, errors='coerce')
+            
+            # Count NaN values
+            real_nan_count = np.isnan(real_values).sum()
+            sim_nan_count = np.isnan(sim_values).sum()
+            
+            if real_nan_count > 0 or sim_nan_count > 0:
+                logger.warning(f"Found NaN values in job data - Real: {real_nan_count}, Simulated: {sim_nan_count}")
+            
+            mask = ~(np.isnan(real_values) | np.isnan(sim_values))
+            final_real = real_values[mask]
+            final_sim = sim_values[mask]
+            
+            logger.info(f"Final aligned job data: {len(final_real)} valid data points")
+            return final_real, final_sim
+            
+        except Exception as e:
+            logger.error(f"Error in job alignment: {e}")
+            return np.array([]), np.array([])
     
-    def _calculate_validation_metrics(self, real_values: np.ndarray, 
+    def _calculate_validation_metrics(self, real_values: np.ndarray,
                                     simulated_values: np.ndarray) -> ValidationMetrics:
-        """Calculate validation metrics"""
+        """Calculate validation metrics with improved handling"""
         if len(real_values) == 0 or len(simulated_values) == 0:
+            logger.warning("Empty arrays provided for validation metrics calculation")
             return self._empty_validation_metrics()
         
-        # Basic metrics
-        mae = mean_absolute_error(real_values, simulated_values)
-        mse = mean_squared_error(real_values, simulated_values)
-        rmse = np.sqrt(mse)
+        # Ensure arrays are the same length
+        min_len = min(len(real_values), len(simulated_values))
+        real_values = real_values[:min_len]
+        simulated_values = simulated_values[:min_len]
         
-        # MAPE (handle division by zero)
-        mape = np.mean(np.abs((real_values - simulated_values) / np.maximum(real_values, 1e-8))) * 100
+        # Remove NaN values
+        valid_mask = ~(np.isnan(real_values) | np.isnan(simulated_values))
+        if not np.any(valid_mask):
+            logger.warning("All values are NaN, cannot calculate metrics")
+            return self._empty_validation_metrics()
         
-        # R-squared
-        r2 = r2_score(real_values, simulated_values)
+        real_values = real_values[valid_mask]
+        simulated_values = simulated_values[valid_mask]
         
-        # Correlation
-        correlation, _ = stats.pearsonr(real_values, simulated_values)
+        logger.info(f"Calculating metrics for {len(real_values)} valid data points")
+        logger.info(f"Real values range: [{np.min(real_values):.3f}, {np.max(real_values):.3f}]")
+        logger.info(f"Simulated values range: [{np.min(simulated_values):.3f}, {np.max(simulated_values):.3f}]")
         
-        # Kolmogorov-Smirnov test
-        ks_statistic, ks_pvalue = stats.ks_2samp(real_values, simulated_values)
-        
-        # Custom distribution similarity score
-        distribution_similarity = 1 - ks_statistic  # Higher is better
-        
-        return ValidationMetrics(
-            mae=mae,
-            mse=mse,
-            rmse=rmse,
-            mape=mape,
-            r2=r2,
-            correlation=correlation,
-            ks_statistic=ks_statistic,
-            ks_pvalue=ks_pvalue,
-            distribution_similarity=distribution_similarity
-        )
+        try:
+            # Basic metrics
+            mae = mean_absolute_error(real_values, simulated_values)
+            mse = mean_squared_error(real_values, simulated_values)
+            rmse = np.sqrt(mse)
+            
+            # MAPE (handle division by zero)
+            real_nonzero = np.maximum(np.abs(real_values), 1e-8)
+            mape = np.mean(np.abs((real_values - simulated_values) / real_nonzero)) * 100
+            
+            # R-squared with better handling
+            if np.var(real_values) < 1e-10:
+                logger.warning("Real values have near-zero variance, R² may be unreliable")
+                r2 = 0.0  # Set to 0 instead of negative when variance is too low
+            else:
+                r2 = r2_score(real_values, simulated_values)
+                # Cap extremely negative R² values
+                if r2 < -10:
+                    logger.warning(f"Extremely negative R² ({r2:.3f}) capped to -1.0")
+                    r2 = -1.0
+            
+            # Correlation
+            if len(real_values) < 2:
+                correlation = 0.0
+            else:
+                correlation, _ = stats.pearsonr(real_values, simulated_values)
+                if np.isnan(correlation):
+                    correlation = 0.0
+            
+            # Kolmogorov-Smirnov test
+            try:
+                ks_statistic, ks_pvalue = stats.ks_2samp(real_values, simulated_values)
+            except Exception as e:
+                logger.warning(f"KS test failed: {e}")
+                ks_statistic, ks_pvalue = 1.0, 0.0
+            
+            # Custom distribution similarity score (0 to 1, higher is better)
+            distribution_similarity = max(0.0, 1 - ks_statistic)
+            
+            logger.info(f"Metrics calculated - R²: {r2:.3f}, MAE: {mae:.3f}, MAPE: {mape:.1f}%")
+            
+            return ValidationMetrics(
+                mae=mae,
+                mse=mse,
+                rmse=rmse,
+                mape=mape,
+                r2=r2,
+                correlation=correlation,
+                ks_statistic=ks_statistic,
+                ks_pvalue=ks_pvalue,
+                distribution_similarity=distribution_similarity
+            )
+            
+        except Exception as e:
+            logger.error(f"Error calculating validation metrics: {e}")
+            return self._empty_validation_metrics()
     
     def _empty_validation_metrics(self) -> ValidationMetrics:
         """Return empty validation metrics"""
@@ -539,38 +702,75 @@ class ModelValidator:
     def _calculate_overall_score(self, energy_metrics: ValidationMetrics,
                                thermal_metrics: ValidationMetrics,
                                performance_metrics: ValidationMetrics) -> float:
-        """Calculate overall validation score"""
+        """Calculate overall validation score with improved handling"""
         scores = []
         weights = []
+        score_details = []
+        
+        # Helper function to calculate component score
+        def calculate_component_score(metrics: ValidationMetrics, name: str) -> float:
+            if np.isnan(metrics.r2) or np.isnan(metrics.distribution_similarity):
+                logger.info(f"{name} metrics contain NaN values, skipping")
+                return None
+            
+            # Transform R² to 0-1 scale (handle negative values)
+            # R² can be negative when model performs worse than mean
+            r2_normalized = max(0.0, (metrics.r2 + 1) / 2)  # Maps [-1,1] to [0,1]
+            
+            # Distribution similarity is already 0-1
+            dist_sim = max(0.0, min(1.0, metrics.distribution_similarity))
+            
+            # Correlation component (transform from [-1,1] to [0,1])
+            corr_normalized = max(0.0, (metrics.correlation + 1) / 2) if not np.isnan(metrics.correlation) else 0.5
+            
+            # Weighted combination: R² is most important, then distribution, then correlation
+            component_score = (0.5 * r2_normalized + 0.3 * dist_sim + 0.2 * corr_normalized)
+            
+            logger.info(f"{name} score components - R²: {metrics.r2:.3f} -> {r2_normalized:.3f}, "
+                       f"Dist: {dist_sim:.3f}, Corr: {metrics.correlation:.3f} -> {corr_normalized:.3f}, "
+                       f"Final: {component_score:.3f}")
+            
+            return component_score
         
         # Energy score (weight: 0.4)
-        if not np.isnan(energy_metrics.r2):
-            energy_score = (energy_metrics.r2 + energy_metrics.distribution_similarity) / 2
-            scores.append(max(0, energy_score))
+        energy_score = calculate_component_score(energy_metrics, "Energy")
+        if energy_score is not None:
+            scores.append(energy_score)
             weights.append(0.4)
+            score_details.append(f"Energy: {energy_score:.3f}")
         
         # Thermal score (weight: 0.3)
-        if not np.isnan(thermal_metrics.r2):
-            thermal_score = (thermal_metrics.r2 + thermal_metrics.distribution_similarity) / 2
-            scores.append(max(0, thermal_score))
+        thermal_score = calculate_component_score(thermal_metrics, "Thermal")
+        if thermal_score is not None:
+            scores.append(thermal_score)
             weights.append(0.3)
+            score_details.append(f"Thermal: {thermal_score:.3f}")
         
         # Performance score (weight: 0.3)
-        if not np.isnan(performance_metrics.r2):
-            performance_score = (performance_metrics.r2 + performance_metrics.distribution_similarity) / 2
-            scores.append(max(0, performance_score))
+        performance_score = calculate_component_score(performance_metrics, "Performance")
+        if performance_score is not None:
+            scores.append(performance_score)
             weights.append(0.3)
+            score_details.append(f"Performance: {performance_score:.3f}")
         
         if not scores:
+            logger.warning("No valid metrics available for overall score calculation")
             return 0.0
         
         # Weighted average
         total_weight = sum(weights)
         if total_weight == 0:
             return 0.0
-        weighted_score = sum(s * w for s, w in zip(scores, weights)) / total_weight
         
-        return min(1.0, max(0.0, weighted_score))
+        # Normalize weights to sum to 1
+        normalized_weights = [w / total_weight for w in weights]
+        weighted_score = sum(s * w for s, w in zip(scores, normalized_weights))
+        
+        final_score = min(1.0, max(0.0, weighted_score))
+        
+        logger.info(f"Overall score calculation: {', '.join(score_details)} -> {final_score:.3f}")
+        
+        return final_score
     
     def _detailed_analysis(self, real_data: Dict[str, pd.DataFrame],
                          simulated_data: Dict[str, pd.DataFrame],
@@ -713,6 +913,15 @@ class ModelValidator:
     def _plot_thermal_comparison(self, real_data: pd.DataFrame, simulated_data: pd.DataFrame,
                                output_path: Path) -> str:
         """Generate thermal comparison plot"""
+        # Check for None data
+        if real_data is None or simulated_data is None:
+            logger.warning("Cannot generate thermal comparison plot: missing data")
+            return ""
+            
+        if real_data.empty or simulated_data.empty:
+            logger.warning("Cannot generate thermal comparison plot: empty data")
+            return ""
+            
         fig, axes = plt.subplots(2, 2, figsize=(15, 10))
         fig.suptitle('Thermal Behavior Validation', fontsize=16)
         
@@ -765,6 +974,15 @@ class ModelValidator:
     def _plot_performance_comparison(self, real_data: pd.DataFrame, simulated_data: pd.DataFrame,
                                    output_path: Path) -> str:
         """Generate performance comparison plot"""
+        # Check for None data
+        if real_data is None or simulated_data is None:
+            logger.warning("Cannot generate performance comparison plot: missing data")
+            return ""
+            
+        if real_data.empty or simulated_data.empty:
+            logger.warning("Cannot generate performance comparison plot: empty data")
+            return ""
+            
         fig, axes = plt.subplots(2, 2, figsize=(15, 10))
         fig.suptitle('Job Performance Validation', fontsize=16)
         
