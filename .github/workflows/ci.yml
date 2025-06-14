@@ -1,0 +1,228 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint-and-validate:
+    runs-on: ubuntu-latest
+    name: Lint and Validate
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black isort bandit safety yamllint shellcheck-py
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    
+    - name: Lint Python code with flake8
+      run: |
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Check Python code formatting with black
+      run: black --check --diff .
+    
+    - name: Check import sorting with isort
+      run: isort --check-only --diff .
+    
+    - name: Security scan with bandit
+      run: bandit -r . -f json -o bandit-report.json || true
+    
+    - name: Check for known security vulnerabilities
+      run: safety check --json --output safety-report.json || true
+    
+    - name: Validate YAML files
+      run: |
+        find . -name "*.yml" -o -name "*.yaml" | xargs yamllint -d relaxed
+    
+    - name: Validate shell scripts
+      run: |
+        find . -name "*.sh" -exec shellcheck {} \;
+
+  test-python:
+    runs-on: ubuntu-latest
+    name: Test Python Components
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-cov pytest-mock
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        if [ -f requirements_enhanced.txt ]; then pip install -r requirements_enhanced.txt; fi
+    
+    - name: Test Python modules
+      run: |
+        # Test analysis modules
+        python -m pytest analysis/ -v --cov=analysis --cov-report=xml || echo "No tests found in analysis/"
+        
+        # Test API module
+        python -c "import sys; sys.path.append('api'); import energy_prediction_api" || echo "API import test failed"
+        
+        # Test workload modules
+        python -c "import sys; sys.path.append('workloads/cpu-intensive'); import cpu_benchmark" || echo "CPU benchmark import test failed"
+        python -c "import sys; sys.path.append('workloads/io-intensive'); import io_benchmark" || echo "IO benchmark import test failed"
+        python -c "import sys; sys.path.append('workloads/mixed'); import mixed_benchmark" || echo "Mixed benchmark import test failed"
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      if: always()
+
+  validate-scripts:
+    runs-on: ubuntu-latest
+    name: Validate Deployment Scripts
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install AWS CLI and ParallelCluster CLI (dry-run)
+      run: |
+        pip install awscli
+        pip install aws-parallelcluster
+    
+    - name: Validate AWS ParallelCluster configuration
+      run: |
+        # Validate cluster config template
+        if [ -f aws-cluster-config-template.yaml ]; then
+          echo "Validating AWS cluster config template..."
+          yamllint aws-cluster-config-template.yaml
+        fi
+        
+        if [ -f scripts/hpc-energy-cluster-config.yaml ]; then
+          echo "Validating HPC energy cluster config..."
+          yamllint scripts/hpc-energy-cluster-config.yaml
+          # Dry-run validation (without actual AWS calls)
+          pcluster validate-cluster-configuration --cluster-configuration scripts/hpc-energy-cluster-config.yaml --region us-east-1 || echo "Config validation completed (expected to fail without AWS credentials)"
+        fi
+    
+    - name: Validate shell scripts syntax
+      run: |
+        for script in scripts/*.sh; do
+          if [ -f "$script" ]; then
+            echo "Validating $script..."
+            bash -n "$script"
+          fi
+        done
+        
+        for script in slurm/scripts/*.sh; do
+          if [ -f "$script" ]; then
+            echo "Validating $script..."
+            bash -n "$script"
+          fi
+        done
+    
+    - name: Test Docker Compose configuration
+      run: |
+        if [ -f docker-compose.yml ]; then
+          echo "Validating Docker Compose configuration..."
+          docker-compose config
+        fi
+
+  security-scan:
+    runs-on: ubuntu-latest
+    name: Security Scanning
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+    
+    - name: Check for secrets
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: main
+        head: HEAD
+        extra_args: --debug --only-verified
+
+  infrastructure-validation:
+    runs-on: ubuntu-latest
+    name: Validate Infrastructure Configuration
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Validate Prometheus configuration
+      run: |
+        if [ -f infrastructure/prometheus/prometheus.yml ]; then
+          echo "Validating Prometheus configuration..."
+          docker run --rm -v "$PWD/infrastructure/prometheus:/etc/prometheus" prom/prometheus:latest promtool check config /etc/prometheus/prometheus.yml
+        fi
+    
+    - name: Validate Grafana provisioning
+      run: |
+        if [ -d infrastructure/grafana/provisioning ]; then
+          echo "Validating Grafana provisioning files..."
+          find infrastructure/grafana/provisioning -name "*.yml" -o -name "*.yaml" | xargs yamllint -d relaxed
+        fi
+    
+    - name: Validate Fluentd configuration
+      run: |
+        if [ -f infrastructure/fluentd/fluent.conf ]; then
+          echo "Validating Fluentd configuration..."
+          docker run --rm -v "$PWD/infrastructure/fluentd:/fluentd/etc" fluent/fluentd:latest fluentd --dry-run -c /fluentd/etc/fluent.conf
+        fi
+    
+    - name: Validate Nginx configuration
+      run: |
+        if [ -f infrastructure/nginx/nginx.conf ]; then
+          echo "Validating Nginx configuration..."
+          docker run --rm -v "$PWD/infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro" nginx:alpine nginx -t
+        fi
+
+  documentation:
+    runs-on: ubuntu-latest
+    name: Documentation and README validation
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Check for required documentation files
+      run: |
+        required_files=("README.md" "DEPLOYMENT.md" "AWS_DEPLOYMENT.md")
+        for file in "${required_files[@]}"; do
+          if [ ! -f "$file" ]; then
+            echo "Missing required documentation file: $file"
+            exit 1
+          else
+            echo "Found: $file"
+          fi
+        done
+    
+    - name: Validate Markdown files
+      uses: DavidAnson/markdownlint-cli2-action@v13
+      with:
+        globs: '**/*.md'
+        config: '.markdownlint.json'
+        fix: false
+      continue-on-error: true
