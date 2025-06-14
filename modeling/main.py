@@ -22,7 +22,6 @@ from core.simulation_engine import (
 from validation.validator import ModelValidator, ValidationReport
 from models.energy_predictor import EnergyPredictor
 from models.thermal_predictor import ThermalPredictor
-from models.workload_generator import WorkloadGenerator
 
 # Configure logging
 logging.basicConfig(
@@ -144,25 +143,35 @@ class HPCModelingPipeline:
         if data['job_metrics'] is not None:
             logger.info("Training energy prediction model")
             energy_predictor = EnergyPredictor(self.config)
-            energy_predictor.train(data['job_metrics'])
-            energy_predictor.save_model(str(self.output_dir / 'models' / 'energy_predictor.pkl'))
-            models['energy'] = energy_predictor
+            training_result = energy_predictor.train(data['job_metrics'])
             
-            # Evaluate model
-            energy_metrics = energy_predictor.evaluate(data['job_metrics'])
-            logger.info(f"Energy model R²: {energy_metrics.get('r2', 'N/A'):.3f}")
+            # Only save and evaluate if training was successful
+            if training_result.get('status') not in ['no_data', 'no_valid_data']:
+                energy_predictor.save_model(str(self.output_dir / 'models' / 'energy_predictor.pkl'))
+                models['energy'] = energy_predictor
+                
+                # Evaluate model
+                energy_metrics = energy_predictor.evaluate(data['job_metrics'])
+                logger.info(f"Energy model R²: {energy_metrics.get('r2', 'N/A'):.3f}")
+            else:
+                logger.warning(f"Energy model training failed: {training_result.get('message', 'Unknown error')}")
         
         # Train thermal predictor
         if data['node_metrics'] is not None:
             logger.info("Training thermal prediction model")
             thermal_predictor = ThermalPredictor(self.config)
-            thermal_predictor.train(data['node_metrics'])
-            thermal_predictor.save_model(str(self.output_dir / 'models' / 'thermal_predictor.pkl'))
-            models['thermal'] = thermal_predictor
+            training_result = thermal_predictor.train(data['node_metrics'])
             
-            # Evaluate model
-            thermal_metrics = thermal_predictor.evaluate(data['node_metrics'])
-            logger.info(f"Thermal model R²: {thermal_metrics.get('r2', 'N/A'):.3f}")
+            # Only save and evaluate if training was successful
+            if training_result.get('status') not in ['no_data', 'no_valid_data']:
+                thermal_predictor.save_model(str(self.output_dir / 'models' / 'thermal_predictor.pkl'))
+                models['thermal'] = thermal_predictor
+                
+                # Evaluate model
+                thermal_metrics = thermal_predictor.evaluate(data['node_metrics'])
+                logger.info(f"Thermal model R²: {thermal_metrics.get('r2', 'N/A'):.3f}")
+            else:
+                logger.warning(f"Thermal model training failed: {training_result.get('message', 'Unknown error')}")
         
         self.models = models
         return models
@@ -184,12 +193,19 @@ class HPCModelingPipeline:
         
         logger.info(f"Generating synthetic workload with {num_jobs} jobs")
         
-        workload_generator = WorkloadGenerator(self.config)
-        
-        if data['job_metrics'] is not None:
-            workload_generator.fit(data['job_metrics'])
-        
-        jobs = workload_generator.generate_jobs(num_jobs)
+        # Simple workload generation (placeholder implementation)
+        jobs = []
+        for i in range(num_jobs):
+            job = JobSpec(
+                job_id=f"synthetic_job_{i:04d}",
+                job_type="cpu_intensive",
+                cpu_cores=4,
+                memory_mb=8192,
+                duration_seconds=3600,
+                arrival_time=i * 60,  # Jobs arrive every minute
+                workload_pattern="compute"
+            )
+            jobs.append(job)
         
         # Export workload specification
         workload_data = [{
@@ -227,7 +243,7 @@ class HPCModelingPipeline:
             # Extract unique nodes from historical data
             unique_nodes = data['node_metrics']['node_id'].unique()
             
-            for node_id in unique_nodes[:self.config.simulation.max_nodes]:
+            for node_id in unique_nodes[:self.config.simulation.num_nodes]:
                 node_data = data['node_metrics'][data['node_metrics']['node_id'] == node_id]
                 
                 # Estimate node specifications from historical data
@@ -248,7 +264,7 @@ class HPCModelingPipeline:
                 self.simulator.add_node(node_spec)
         else:
             # Create default cluster configuration
-            for i in range(self.config.simulation.max_nodes):
+            for i in range(self.config.simulation.num_nodes):
                 node_spec = NodeSpec(
                     node_id=f"node-{i:03d}",
                     cpu_cores=16,
@@ -281,7 +297,7 @@ class HPCModelingPipeline:
             self.simulator.submit_job(job)
         
         # Run simulation
-        simulation_duration = self.config.simulation.duration_hours * 3600
+        simulation_duration = self.config.simulation.simulation_duration_hours * 3600
         self.simulator.run_simulation(simulation_duration)
         
         # Export results
@@ -331,7 +347,16 @@ class HPCModelingPipeline:
         
         # Add energy data if available
         if simulation_results['metrics'].energy_consumption:
-            real_validation_data['energy'] = real_data.get('energy_predictions')
+            energy_predictions = real_data.get('energy_predictions')
+            if energy_predictions is not None:
+                # Map actual_energy_wh to energy_wh for validation
+                energy_predictions = energy_predictions.copy()
+                if 'actual_energy_wh' in energy_predictions.columns:
+                    energy_predictions['energy_wh'] = energy_predictions['actual_energy_wh']
+                real_validation_data['energy'] = energy_predictions
+            else:
+                real_validation_data['energy'] = None
+            
             simulated_validation_data['energy'] = pd.DataFrame(
                 simulation_results['metrics'].energy_consumption
             )
@@ -442,7 +467,7 @@ This report presents the results of High-Level Modeling (HLM) simulation for HPC
 
 - **Jobs Simulated:** {report['simulation_summary']['job_statistics']['total_submitted']:,}
 - **Jobs Completed:** {report['simulation_summary']['job_statistics']['total_completed']:,}
-- **Completion Rate:** {report['simulation_summary']['job_statistics']['total_completed']/report['simulation_summary']['job_statistics']['total_submitted']*100:.1f}%
+- **Completion Rate:** {(report['simulation_summary']['job_statistics']['total_completed']/report['simulation_summary']['job_statistics']['total_submitted']*100) if report['simulation_summary']['job_statistics']['total_submitted'] > 0 else 0:.1f}%
 - **Total Energy Consumed:** {report['simulation_summary']['energy_summary']['total_energy_wh']:,.1f} Wh
 - **Average Power:** {report['simulation_summary']['energy_summary']['average_power_w']:.1f} W
 
@@ -558,7 +583,7 @@ def main():
             pipeline.config.simulation.num_jobs = args.jobs
         
         if args.duration:
-            pipeline.config.simulation.duration_hours = args.duration
+            pipeline.config.simulation.simulation_duration_hours = args.duration
         
         if args.validate_only:
             logger.info("Running validation only")
