@@ -1,0 +1,902 @@
+[
+  {
+    "job_id": "synthetic_job_0000",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 0,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0001",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 60,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0002",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 120,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0003",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 180,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0004",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 240,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0005",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 300,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0006",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 360,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0007",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 420,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0008",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 480,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0009",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 540,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0010",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 600,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0011",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 660,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0012",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 720,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0013",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 780,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0014",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 840,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0015",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 900,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0016",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 960,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0017",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 1020,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0018",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 1080,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0019",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 1140,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0020",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 1200,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0021",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 1260,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0022",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 1320,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0023",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 1380,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0024",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 1440,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0025",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 1500,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0026",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 1560,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0027",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 1620,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0028",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 1680,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0029",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 1740,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0030",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 1800,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0031",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 1860,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0032",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 1920,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0033",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 1980,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0034",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 2040,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0035",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 2100,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0036",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 2160,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0037",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 2220,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0038",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 2280,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0039",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 2340,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0040",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 2400,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0041",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 2460,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0042",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 2520,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0043",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 2580,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0044",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 2640,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0045",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 2700,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0046",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 2760,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0047",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 2820,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0048",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 2880,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0049",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 2940,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0050",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 3000,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0051",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 3060,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0052",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 3120,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0053",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 3180,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0054",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 3240,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0055",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 3300,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0056",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 3360,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0057",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 3420,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0058",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 3480,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0059",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 3540,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0060",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 3600,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0061",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 3660,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0062",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 3720,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0063",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 3780,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0064",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 3840,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0065",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 3900,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0066",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 3960,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0067",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 4020,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0068",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 4080,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0069",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 4140,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0070",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 4200,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0071",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 4260,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0072",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 4320,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0073",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 4380,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0074",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 4440,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0075",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 4500,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0076",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 4560,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0077",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 4620,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0078",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 4680,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0079",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 4740,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0080",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 4800,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0081",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 4860,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0082",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 4920,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0083",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 4980,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0084",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 5040,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0085",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 5100,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0086",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 5160,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0087",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 5220,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0088",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 5280,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0089",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 5340,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0090",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 5400,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0091",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 5460,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0092",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 5520,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0093",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 5580,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0094",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 5640,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0095",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 5700,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0096",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 5760,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0097",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 5820,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0098",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 5880,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0099",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 5940,
+    "workload_pattern": "compute"
+  }
+]

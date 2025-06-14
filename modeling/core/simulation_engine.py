@@ -12,7 +12,13 @@ from pathlib import Path
 import random
 from collections import defaultdict
 
-from ..utils.config import ModelingConfig, SimulationConfig
+try:
+    from ..utils.config import ModelingConfig, SimulationConfig
+except ImportError:
+    import sys
+    from pathlib import Path
+    sys.path.append(str(Path(__file__).parent.parent))
+    from utils.config import ModelingConfig, SimulationConfig
 from .data_loader import HistoricalDataLoader
 
 logger = logging.getLogger(__name__)

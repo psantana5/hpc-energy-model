@@ -22,6 +22,7 @@ simulation:
   time_step_seconds: 60
   warmup_time_minutes: 30
   cooldown_time_minutes: 15
+  num_jobs: 100  # Number of synthetic jobs to generate
   
   # Environmental conditions
   ambient_temperature_c: 22.0

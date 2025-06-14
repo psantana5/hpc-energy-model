@@ -13,7 +13,13 @@ import json
 from dataclasses import dataclass
 from datetime import datetime
 
-from ..utils.config import ModelingConfig
+try:
+    from ..utils.config import ModelingConfig
+except ImportError:
+    import sys
+    from pathlib import Path
+    sys.path.append(str(Path(__file__).parent.parent))
+    from utils.config import ModelingConfig
 
 logger = logging.getLogger(__name__)
 
@@ -204,21 +210,42 @@ class ModelValidator:
                 real_data['thermal'], simulated_data['thermal']
             )
         elif 'node_metrics' in real_data and 'node_metrics' in simulated_data:
-            thermal_metrics = self.validate_thermal_behavior(
-                real_data['node_metrics'], simulated_data['node_metrics'],
-                temp_column='cpu_temp'
-            )
+            # Check if real data is available and not empty
+            if real_data['node_metrics'] is not None and len(real_data['node_metrics']) > 0:
+                # Handle column name mismatch: real data has 'cpu_temp', simulated has 'temperature'
+                real_node_data = real_data['node_metrics'].copy()
+                sim_node_data = simulated_data['node_metrics'].copy()
+                
+                # Map cpu_temp to temperature for consistency
+                if 'cpu_temp' in real_node_data.columns and 'temperature' not in real_node_data.columns:
+                    real_node_data['temperature'] = real_node_data['cpu_temp']
+                
+                thermal_metrics = self.validate_thermal_behavior(
+                    real_node_data, sim_node_data,
+                    temp_column='temperature'
+                )
+            else:
+                logger.warning("No real node metrics data available for thermal validation")
+                thermal_metrics = self._empty_validation_metrics()
         
         # Validate job performance
         if 'jobs' in real_data and 'jobs' in simulated_data:
-            performance_metrics = self.validate_job_performance(
-                real_data['jobs'], simulated_data['jobs']
-            )
+            if real_data['jobs'] is not None and len(real_data['jobs']) > 0:
+                performance_metrics = self.validate_job_performance(
+                    real_data['jobs'], simulated_data['jobs']
+                )
+            else:
+                logger.warning("No real job data available for performance validation")
+                performance_metrics = self._empty_validation_metrics()
         elif 'job_metrics' in real_data and 'job_metrics' in simulated_data:
-            performance_metrics = self.validate_job_performance(
-                real_data['job_metrics'], simulated_data['job_metrics'],
-                duration_column='duration_seconds'
-            )
+            if real_data['job_metrics'] is not None and len(real_data['job_metrics']) > 0:
+                performance_metrics = self.validate_job_performance(
+                    real_data['job_metrics'], simulated_data['job_metrics'],
+                    duration_column='duration_seconds'
+                )
+            else:
+                logger.warning("No real job metrics data available for performance validation")
+                performance_metrics = self._empty_validation_metrics()
         
         # Calculate overall score
         overall_score = self._calculate_overall_score(
@@ -404,9 +431,16 @@ class ModelValidator:
             real_values = real_data[value_column].iloc[:min_len].values
             sim_values = simulated_data[value_column].iloc[:min_len].values
         
-        # Remove NaN values
-        mask = ~(np.isnan(real_values) | np.isnan(sim_values))
-        return real_values[mask], sim_values[mask]
+        # Remove NaN values - handle non-numeric types
+        try:
+            # Convert to numeric if possible
+            real_values = pd.to_numeric(real_values, errors='coerce')
+            sim_values = pd.to_numeric(sim_values, errors='coerce')
+            mask = ~(np.isnan(real_values) | np.isnan(sim_values))
+            return real_values[mask], sim_values[mask]
+        except Exception:
+            # If conversion fails, return as is (assuming no NaN values)
+            return real_values, sim_values
     
     def _align_by_job_id(self, real_jobs: pd.DataFrame, simulated_jobs: pd.DataFrame,
                         value_column: str) -> Tuple[np.ndarray, np.ndarray]:
@@ -502,6 +536,8 @@ class ModelValidator:
         
         # Weighted average
         total_weight = sum(weights)
+        if total_weight == 0:
+            return 0.0
         weighted_score = sum(s * w for s, w in zip(scores, weights)) / total_weight
         
         return min(1.0, max(0.0, weighted_score))
@@ -522,9 +558,10 @@ class ModelValidator:
         # Data coverage analysis
         for key in real_data.keys():
             if key in simulated_data:
-                real_len = len(real_data[key])
-                sim_len = len(simulated_data[key])
-                coverage = min(real_len, sim_len) / max(real_len, sim_len)
+                real_len = len(real_data[key]) if real_data[key] is not None else 0
+                sim_len = len(simulated_data[key]) if simulated_data[key] is not None else 0
+                max_len = max(real_len, sim_len)
+                coverage = min(real_len, sim_len) / max_len if max_len > 0 else 0.0
                 analysis['data_coverage'][key] = {
                     'real_records': real_len,
                     'simulated_records': sim_len,

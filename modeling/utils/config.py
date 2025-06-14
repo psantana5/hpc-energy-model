@@ -15,6 +15,8 @@ class DatabaseConfig:
     username: str = "postgres"
     password: str = "password"
     schema: str = "hpc_energy"
+    connection_timeout: int = 30
+    query_timeout: int = 300
     
     @classmethod
     def from_env(cls):
@@ -30,24 +32,43 @@ class DatabaseConfig:
 @dataclass
 class SimulationConfig:
     """Simulation parameters configuration"""
-    # Time parameters
-    time_step_seconds: int = 30
-    simulation_duration_hours: int = 24
-    warmup_duration_hours: int = 1
+    # Cluster specifications
+    num_nodes: int = 10
+    cores_per_node: int = 16
+    memory_per_node_gb: int = 64
     
-    # Node configuration
+    # Time parameters
+    time_step_seconds: int = 60
+    simulation_duration_hours: int = 24
+    warmup_time_minutes: int = 30
+    cooldown_time_minutes: int = 15
+    
+    # Environmental conditions
+    ambient_temperature_c: float = 22.0
+    cooling_efficiency: float = 0.85
+    humidity_percent: float = 45.0
+    
+    # Resource management
+    scheduling_algorithm: str = "fifo"
+    max_queue_size: int = 1000
+    job_timeout_hours: int = 24
+    
+    # Thermal modeling
+    thermal_time_constant: int = 300
+    max_safe_temperature: float = 85.0
+    throttling_temperature: float = 90.0
+    
+    # Power modeling
+    idle_power_watts: float = 150
+    max_power_watts: float = 400
+    power_efficiency: float = 0.92
+    
+    # Legacy parameters for backward compatibility
     default_cpu_cores: int = 8
     default_memory_gb: int = 32
-    default_thermal_capacity: float = 1000.0  # J/K
+    default_thermal_capacity: float = 1000.0
     default_cooling_coefficient: float = 0.1
-    
-    # Energy parameters
-    idle_power_watts: float = 100.0
-    max_power_watts: float = 400.0
-    power_efficiency: float = 0.85
-    
-    # Thermal parameters
-    ambient_temperature: float = 22.0  # Celsius
+    ambient_temperature: float = 22.0
     thermal_threshold_warning: float = 75.0
     thermal_threshold_critical: float = 85.0
     
@@ -55,6 +76,7 @@ class SimulationConfig:
     cpu_utilization_noise: float = 0.05
     memory_utilization_noise: float = 0.03
     io_pattern_variability: float = 0.1
+    num_jobs: int = 100  # Number of synthetic jobs to generate
 
 @dataclass
 class ModelConfig:
@@ -92,10 +114,47 @@ class ModelConfig:
 @dataclass
 class OutputConfig:
     """Output and reporting configuration"""
+    # Directory structure
+    base_directory: str = "./modeling_output"
+    models_directory: str = "models"
+    reports_directory: str = "reports"
+    plots_directory: str = "plots"
+    data_directory: str = "data"
+    logs_directory: str = "logs"
+    
+    # File formats
+    data_format: str = "parquet"
+    plot_format: str = "png"
+    report_format: str = "markdown"
+    
+    # Logging
+    log_level: str = "INFO"
+    log_to_file: bool = True
+    log_rotation: bool = True
+    max_log_size_mb: int = 100
+    
+    # Visualization
+    plot_style: str = "seaborn"
+    figure_size: list = field(default_factory=lambda: [12, 8])
+    dpi: int = 300
+    color_palette: str = "viridis"
+    
+    # Report generation
+    include_plots: bool = True
+    include_raw_data: bool = False
+    include_model_details: bool = True
+    include_validation_metrics: bool = True
+    
+    # Data export
+    export_predictions: bool = True
+    export_feature_importance: bool = True
+    export_validation_results: bool = True
+    compression: str = "gzip"
+    
+    # Legacy parameters for backward compatibility
     output_directory: str = "modeling_output"
     save_intermediate_results: bool = True
     generate_plots: bool = True
-    plot_format: str = "png"  # png, svg, pdf
     
     # Report generation
     generate_html_report: bool = True
@@ -145,6 +204,11 @@ class ModelingConfig:
             models=ModelConfig(**config_data.get('models', {})),
             output=OutputConfig(**config_data.get('output', {}))
         )
+    
+    @classmethod
+    def from_yaml(cls, config_path: str):
+        """Load configuration from YAML file (alias for from_file)"""
+        return cls.from_file(config_path)
     
     @classmethod
     def from_env(cls):

@@ -11,7 +11,13 @@ from pathlib import Path
 import json
 from dataclasses import dataclass
 
-from ..utils.config import ModelingConfig, DatabaseConfig
+try:
+    from ..utils.config import ModelingConfig, DatabaseConfig
+except ImportError:
+    import sys
+    from pathlib import Path
+    sys.path.append(str(Path(__file__).parent.parent))
+    from utils.config import ModelingConfig, DatabaseConfig
 
 logger = logging.getLogger(__name__)
 
@@ -255,10 +261,10 @@ class HistoricalDataLoader:
             job_id,
             predicted_energy_wh,
             actual_energy_wh,
-            prediction_error,
+            prediction_error_percent,
             model_version,
             confidence_score,
-            features_used
+            prediction_method as features_used
         FROM {self.db_config.schema}.energy_predictions
         WHERE time >= %s AND time <= %s
         ORDER BY time ASC

@@ -1,0 +1,70 @@
+{
+  "timestamp": "2025-06-14T21:03:13.680955",
+  "model_name": "HPC_Energy_Simulation",
+  "validation_type": "comprehensive",
+  "overall_score": 0.0,
+  "energy_metrics": {
+    "mae": NaN,
+    "mse": NaN,
+    "rmse": NaN,
+    "mape": NaN,
+    "r2": NaN,
+    "correlation": NaN,
+    "ks_statistic": NaN,
+    "ks_pvalue": NaN,
+    "distribution_similarity": NaN
+  },
+  "thermal_metrics": {
+    "mae": NaN,
+    "mse": NaN,
+    "rmse": NaN,
+    "mape": NaN,
+    "r2": NaN,
+    "correlation": NaN,
+    "ks_statistic": NaN,
+    "ks_pvalue": NaN,
+    "distribution_similarity": NaN
+  },
+  "performance_metrics": {
+    "mae": NaN,
+    "mse": NaN,
+    "rmse": NaN,
+    "mape": NaN,
+    "r2": NaN,
+    "correlation": NaN,
+    "ks_statistic": NaN,
+    "ks_pvalue": NaN,
+    "distribution_similarity": NaN
+  },
+  "detailed_analysis": {
+    "data_coverage": {
+      "job_metrics": {
+        "real_records": 0,
+        "simulated_records": 0,
+        "coverage_ratio": 0.0
+      },
+      "node_metrics": {
+        "real_records": 0,
+        "simulated_records": 0,
+        "coverage_ratio": 0.0
+      },
+      "energy": {
+        "real_records": 0,
+        "simulated_records": 1440,
+        "coverage_ratio": 0.0
+      }
+    },
+    "bias_analysis": {},
+    "error_patterns": {},
+    "outlier_analysis": {}
+  },
+  "recommendations": [
+    "Model validation shows good agreement with real data. Consider fine-tuning for specific use cases."
+  ],
+  "plots_generated": [
+    "modeling_output/validation/energy_validation.png",
+    "modeling_output/validation/thermal_validation.png",
+    "modeling_output/validation/performance_validation.png",
+    "modeling_output/validation/distribution_comparison.png"
+  ]
+}

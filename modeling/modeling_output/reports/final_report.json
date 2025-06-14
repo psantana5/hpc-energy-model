@@ -1,0 +1,57 @@
+{
+  "metadata": {
+    "timestamp": "2025-06-14T21:03:14.523435",
+    "config": {
+      "database": "DatabaseConfig(host='localhost', port=5432, database='hpc_energy_db', username='postgres', password='password', schema='hpc_energy', connection_timeout=30, query_timeout=300)",
+      "simulation": "SimulationConfig(num_nodes=10, cores_per_node=16, memory_per_node_gb=64, time_step_seconds=60, simulation_duration_hours=24, warmup_time_minutes=30, cooldown_time_minutes=15, ambient_temperature_c=22.0, cooling_efficiency=0.85, humidity_percent=45.0, scheduling_algorithm='fifo', max_queue_size=1000, job_timeout_hours=24, thermal_time_constant=300, max_safe_temperature=85.0, throttling_temperature=90.0, idle_power_watts=150, max_power_watts=400, power_efficiency=0.92, default_cpu_cores=8, default_memory_gb=32, default_thermal_capacity=1000.0, default_cooling_coefficient=0.1, ambient_temperature=22.0, thermal_threshold_warning=75.0, thermal_threshold_critical=85.0, cpu_utilization_noise=0.05, memory_utilization_noise=0.03, io_pattern_variability=0.1, num_jobs=100)",
+      "models": "ModelConfig(energy_model_type='random_forest', thermal_model_type='physics_based', workload_model_type='markov_chain', train_test_split=0.8, validation_split=0.2, cross_validation_folds=5, feature_window_minutes=10, feature_lag_steps=3, enable_feature_selection=True, random_forest_params={'n_estimators': 100, 'max_depth': 10, 'min_samples_split': 5, 'random_state': 42}, xgboost_params={'n_estimators': 100, 'max_depth': 6, 'learning_rate': 0.1, 'random_state': 42})",
+      "output": "OutputConfig(base_directory='./modeling_output', models_directory='models', reports_directory='reports', plots_directory='plots', data_directory='data', logs_directory='logs', data_format='parquet', plot_format='png', report_format='markdown', log_level='INFO', log_to_file=True, log_rotation=True, max_log_size_mb=100, plot_style='seaborn', figure_size=[12, 8], dpi=300, color_palette='viridis', include_plots=True, include_raw_data=False, include_model_details=True, include_validation_metrics=True, export_predictions=True, export_feature_importance=True, export_validation_results=True, compression='gzip', output_directory='modeling_output', save_intermediate_results=True, generate_plots=True, generate_html_report=True, generate_json_summary=True, include_model_explanations=True, comparison_metrics=['mse', 'mae', 'r2', 'mape', 'rmse'], plot_themes='seaborn')",
+      "historical_data_days": 30,
+      "min_job_duration_seconds": 60,
+      "max_job_duration_hours": 48,
+      "validation_tolerance_percent": 10.0,
+      "statistical_significance_level": 0.05
+    },
+    "pipeline_version": "1.0.0"
+  },
+  "data_summary": {
+    "total_jobs": 0,
+    "total_nodes": 0,
+    "data_quality_score": 0,
+    "time_range": {
+      "start": "NaT",
+      "end": "NaT"
+    }
+  },
+  "simulation_summary": {
+    "simulation_config": {
+      "duration": 86400,
+      "nodes": 0,
+      "total_cores": 0,
+      "total_memory_mb": 0
+    },
+    "job_statistics": {
+      "total_submitted": 0,
+      "total_completed": 0,
+      "jobs_in_queue": 100
+    },
+    "performance_metrics": {},
+    "energy_summary": {
+      "total_energy_wh": 0.0,
+      "average_power_w": 0.0
+    }
+  },
+  "validation_summary": {
+    "overall_score": 0.0,
+    "energy_r2": NaN,
+    "thermal_r2": NaN,
+    "performance_r2": NaN,
+    "recommendations": [
+      "Model validation shows good agreement with real data. Consider fine-tuning for specific use cases."
+    ]
+  },
+  "model_performance": {
+    "energy_model": {},
+    "thermal_model": {}
+  }
+}
