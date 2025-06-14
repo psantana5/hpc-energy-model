@@ -1,8 +1,8 @@
 {
-  "timestamp": "2025-06-14T22:13:36.871421",
+  "timestamp": "2025-06-14T22:29:30.228319",
   "model_name": "HPC_Energy_Simulation",
   "validation_type": "comprehensive",
-  "overall_score": 0.1965618872317958,
+  "overall_score": 0.3379480119970198,
   "energy_metrics": {
     "mae": 32488.16450482966,
     "mse": 3286432787.023998,
@@ -15,15 +15,15 @@
     "distribution_similarity": 0.00347222222222221
   },
   "thermal_metrics": {
-    "mae": 16.88381594059704,
-    "mse": 382.8532717235452,
-    "rmse": 19.56663669932943,
-    "mape": 37.68968470168938,
-    "r2": -5.220348667794964,
-    "correlation": -0.01963978330083102,
-    "ks_statistic": 0.5704166666666667,
-    "ks_pvalue": 0.0,
-    "distribution_similarity": 0.4295833333333333
+    "mae": 16.47646060833885,
+    "mse": 370.0518906194729,
+    "rmse": 19.236732846808287,
+    "mape": 36.93046068233441,
+    "r2": -4.975393522216179,
+    "correlation": -0.013261425651613661,
+    "ks_statistic": 0.539047619047619,
+    "ks_pvalue": 5.725900944125045e-280,
+    "distribution_similarity": 0.460952380952381
   },
   "performance_metrics": {
     "mae": 38854.55,
@@ -39,19 +39,19 @@
   "detailed_analysis": {
     "data_coverage": {
       "jobs": {
-        "real_records": 2400,
+        "real_records": 2100,
         "simulated_records": 100,
-        "coverage_ratio": 0.041666666666666664
+        "coverage_ratio": 0.047619047619047616
       },
       "node_metrics": {
-        "real_records": 2400,
+        "real_records": 2100,
         "simulated_records": 14400,
-        "coverage_ratio": 0.16666666666666666
+        "coverage_ratio": 0.14583333333333334
       },
       "energy": {
-        "real_records": 2400,
+        "real_records": 2100,
         "simulated_records": 1440,
-        "coverage_ratio": 0.6
+        "coverage_ratio": 0.6857142857142857
       }
     },
     "bias_analysis": {},

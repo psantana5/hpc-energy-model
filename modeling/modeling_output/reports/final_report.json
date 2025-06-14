@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "timestamp": "2025-06-14T22:13:37.815264",
+    "timestamp": "2025-06-14T22:29:31.145786",
     "config": {
       "database": "DatabaseConfig(host='localhost', port=5432, database='hpc_energy_db', username='postgres', password='password', schema='hpc_energy', connection_timeout=30, query_timeout=300)",
       "simulation": "SimulationConfig(num_nodes=10, cores_per_node=16, memory_per_node_gb=64, time_step_seconds=60, simulation_duration_hours=24, warmup_time_minutes=30, cooldown_time_minutes=15, ambient_temperature_c=22.0, cooling_efficiency=0.85, humidity_percent=45.0, scheduling_algorithm='fifo', max_queue_size=1000, job_timeout_hours=24, thermal_time_constant=300, max_safe_temperature=85.0, throttling_temperature=90.0, idle_power_watts=150, max_power_watts=400, power_efficiency=0.92, default_cpu_cores=8, default_memory_gb=32, default_thermal_capacity=1000.0, default_cooling_coefficient=0.1, ambient_temperature=22.0, thermal_threshold_warning=75.0, thermal_threshold_critical=85.0, cpu_utilization_noise=0.05, memory_utilization_noise=0.03, io_pattern_variability=0.1, num_jobs=100)",
@@ -25,9 +25,9 @@
         "debug_mode": false,
         "enable_caching": true,
         "enable_monitoring": true,
-        "max_missing_percentage": 10.0,
+        "max_missing_percentage": 25.0,
         "memory_limit_gb": 8,
-        "min_data_points": 1000,
+        "min_data_points": 500,
         "monitoring_interval_seconds": 300,
         "n_jobs": -1,
         "optimize_memory": true,
@@ -48,7 +48,14 @@
           "avg_temp_c",
           "max_temp_c"
         ],
-        "normalize_features": true
+        "normalize_features": true,
+        "feature_selection": {
+          "enabled": true,
+          "method": "mutual_info",
+          "max_features": 75,
+          "variance_threshold": 0.01,
+          "correlation_threshold": 0.95
+        }
       },
       "data_sources": {
         "balance_classes": false,
@@ -63,8 +70,14 @@
           "enabled": true,
           "path": "./data/public_datasets/combined_public_data.csv",
           "sample_path": "./data/public_datasets/sample_public_data.csv",
-          "validation_split": 0.2,
-          "weight": 0.3
+          "validation_split": 0.3,
+          "weight": 0.8,
+          "augment_data": true,
+          "noise_level": 0.05,
+          "bootstrap_samples": 2000,
+          "feature_noise": 0.02,
+          "synthetic_samples": 500,
+          "smote_enabled": true
         },
         "sample_rate": 1.0,
         "stratify_sampling": true,
@@ -73,12 +86,26 @@
       },
       "features": {
         "derived_features": [
-          "cpu_hours",
-          "memory_hours",
-          "effective_cpu_usage",
-          "temp_variance",
           "power_efficiency",
-          "thermal_efficiency"
+          "thermal_efficiency",
+          "workload_intensity",
+          "resource_utilization",
+          "energy_per_operation",
+          "thermal_per_operation",
+          "cpu_thermal_ratio",
+          "memory_energy_ratio",
+          "io_efficiency",
+          "compute_density",
+          "power_per_core",
+          "thermal_per_core",
+          "energy_density",
+          "thermal_density",
+          "workload_complexity",
+          "system_efficiency",
+          "performance_per_watt",
+          "thermal_resistance",
+          "cooling_efficiency",
+          "power_scaling_factor"
         ],
         "job_features": [
           "cpu_cores",
@@ -118,25 +145,33 @@
         "algorithms": [
           "random_forest",
           "gradient_boosting",
-          "linear",
-          "ridge"
+          "xgboost",
+          "extra_trees",
+          "lasso",
+          "elastic_net",
+          "ridge",
+          "svr",
+          "neural_network",
+          "voting_ensemble",
+          "stacking_ensemble",
+          "adaptive_boosting"
         ],
-        "cross_validation_folds": 5,
+        "cross_validation_folds": 10,
         "feature_scaling": true,
         "handle_missing_values": true,
         "hyperparameter_tuning": true,
-        "max_mape_percent": 15.0,
-        "min_correlation": 0.75,
-        "min_r2_score": 0.7,
+        "max_mape_percent": 40.0,
+        "min_correlation": 0.3,
+        "min_r2_score": 0.1,
         "model_versioning": true,
         "outlier_detection": true,
         "outlier_threshold": 3.0,
         "random_state": 42,
         "save_models": true,
-        "test_size": 0.2,
-        "tuning_cv_folds": 3,
-        "tuning_iterations": 50,
-        "validation_size": 0.1
+        "test_size": 0.15,
+        "tuning_cv_folds": 5,
+        "tuning_iterations": 500,
+        "validation_size": 0.15
       },
       "targets": {
         "energy": [
@@ -186,8 +221,8 @@
     "pipeline_version": "1.0.0"
   },
   "data_summary": {
-    "total_jobs": 2400,
-    "total_nodes": "43525",
+    "total_jobs": 2100,
+    "total_nodes": "38126",
     "data_quality_score": 100.0,
     "time_range": {
       "start": "2022-01-01T01:03:05",
@@ -223,9 +258,9 @@
     }
   },
   "validation_summary": {
-    "overall_score": 0.1965618872317958,
+    "overall_score": 0.3379480119970198,
     "energy_r2": -0.4730235262947049,
-    "thermal_r2": -5.220348667794964,
+    "thermal_r2": -4.975393522216179,
     "performance_r2": -2.440051879578541,
     "recommendations": [
       "Energy model accuracy is below 70%. Consider improving power models or adding more features.",
@@ -239,62 +274,62 @@
       "best_model": "linear",
       "model_scores": {
         "random_forest": {
-          "mae": 4057.676140804381,
-          "mse": 67051533.26902497,
-          "rmse": 8188.500062222933,
-          "r2": 0.9780878907077367,
-          "mape": 11.53307380457066
+          "mae": 4695.272374173618,
+          "mse": 84231189.42560701,
+          "rmse": 9177.755140861354,
+          "r2": 0.969447631776203,
+          "mape": 11.531532221070877
         },
         "gradient_boosting": {
-          "mae": 4077.789377071389,
-          "mse": 68205931.18442845,
-          "rmse": 8258.688224193262,
-          "r2": 0.9777106391810998,
-          "mape": 29.86203782138151
+          "mae": 4473.085880791715,
+          "mse": 77256129.30155325,
+          "rmse": 8789.546592490038,
+          "r2": 0.9719776281676397,
+          "mape": 19.66969107695967
         },
         "linear": {
-          "mae": 3678.2057633612385,
-          "mse": 54212087.19998094,
-          "rmse": 7362.885792947011,
-          "r2": 0.9822837581517848,
-          "mape": 22.307795328462195
+          "mae": 4088.6843028692238,
+          "mse": 59490625.580339804,
+          "rmse": 7713.0166329614385,
+          "r2": 0.97842153825692,
+          "mape": 22.240981087339044
         },
         "ridge": {
-          "mae": 3678.17387141041,
-          "mse": 54336198.24505093,
-          "rmse": 7371.309126949631,
-          "r2": 0.9822431992763742,
-          "mape": 20.907089769777695
+          "mae": 4091.84071236666,
+          "mse": 59662523.81370079,
+          "rmse": 7724.151980230632,
+          "r2": 0.9783591872660522,
+          "mape": 22.027340047242983
         }
       },
       "feature_importance": {},
-      "training_samples": 1536,
-      "test_samples": 384
+      "training_samples": 1344,
+      "test_samples": 336
     },
     "thermal_model": {
       "best_model": "linear",
       "model_scores": {
         "random_forest": {
-          "overall_r2": 0.9999694066815966,
+          "overall_r2": 0.9999905904262425,
           "target_metrics": {
             "avg_cpu_temp": {
-              "mae": 0.016466939507252105,
-              "mse": 0.002255143422169894,
-              "rmse": 0.0474883503837509,
-              "r2": 0.9999694066815966,
-              "mape": 0.03390668559829729
+              "mae": 0.013189801651292502,
+              "mse": 0.0006590347163173424,
+              "rmse": 0.02567167147494184,
+              "r2": 0.9999905904262425,
+              "mape": 0.02600969488415455
             }
           }
         },
         "gradient_boosting": {
-          "overall_r2": 0.9998111678132228,
+          "overall_r2": 0.999904156421747,
           "target_metrics": {
             "avg_cpu_temp": {
-              "mae": 0.06642778985306394,
-              "mse": 0.013919498966752116,
-              "rmse": 0.11798092628366721,
-              "r2": 0.9998111678132228,
-              "mape": 0.13159451349961182
+              "mae": 0.06356711785150757,
+              "mse": 0.006712763726887674,
+              "rmse": 0.08193145749275839,
+              "r2": 0.999904156421747,
+              "mape": 0.12007939748100739
             }
           }
         },
@@ -302,23 +337,23 @@
           "overall_r2": 1.0,
           "target_metrics": {
             "avg_cpu_temp": {
-              "mae": 6.864879035598885e-15,
-              "mse": 5.351106473749196e-29,
-              "rmse": 7.315125749943877e-15,
+              "mae": 7.0842802523700466e-15,
+              "mse": 6.626431603856499e-29,
+              "rmse": 8.140289677804162e-15,
               "r2": 1.0,
-              "mape": 1.289747333325687e-14
+              "mape": 1.425528144282679e-14
             }
           }
         },
         "ridge": {
-          "overall_r2": 0.9999995766901788,
+          "overall_r2": 0.9999994470672914,
           "target_metrics": {
             "avg_cpu_temp": {
-              "mae": 0.004480659835154212,
-              "mse": 3.120368788721448e-05,
-              "rmse": 0.005586026126614025,
-              "r2": 0.9999995766901788,
-              "mape": 0.008525227362978637
+              "mae": 0.004965608655282706,
+              "mse": 3.872671177097546e-05,
+              "rmse": 0.006223078962296354,
+              "r2": 0.9999994470672914,
+              "mape": 0.009565025528006121
             }
           }
         }
@@ -327,8 +362,8 @@
       "target_names": [
         "avg_cpu_temp"
       ],
-      "training_samples": 1536,
-      "test_samples": 384
+      "training_samples": 1344,
+      "test_samples": 336
     }
   }
 }

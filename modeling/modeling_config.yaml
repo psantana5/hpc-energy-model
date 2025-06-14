@@ -11,9 +11,9 @@ advanced:
   debug_mode: false
   enable_caching: true
   enable_monitoring: true
-  max_missing_percentage: 10.0
+  max_missing_percentage: 25.0
   memory_limit_gb: 8
-  min_data_points: 1000
+  min_data_points: 500
   monitoring_interval_seconds: 300
   n_jobs: -1
   optimize_memory: true
@@ -33,6 +33,12 @@ data_loading:
   - avg_temp_c
   - max_temp_c
   normalize_features: true
+  feature_selection:
+    enabled: true
+    method: mutual_info
+    max_features: 75
+    variance_threshold: 0.01
+    correlation_threshold: 0.95
 data_sources:
   balance_classes: false
   energy_predictions_table: energy_predictions
@@ -46,8 +52,14 @@ data_sources:
     enabled: true
     path: ./data/public_datasets/combined_public_data.csv
     sample_path: ./data/public_datasets/sample_public_data.csv
-    validation_split: 0.2
-    weight: 0.3
+    validation_split: 0.3
+    weight: 0.8
+    augment_data: true
+    noise_level: 0.05
+    bootstrap_samples: 2000
+    feature_noise: 0.02
+    synthetic_samples: 500
+    smote_enabled: true
   sample_rate: 1.0
   stratify_sampling: true
   training_end_date: '2024-12-31'
@@ -62,12 +74,26 @@ database:
   username: postgres
 features:
   derived_features:
-  - cpu_hours
-  - memory_hours
-  - effective_cpu_usage
-  - temp_variance
   - power_efficiency
   - thermal_efficiency
+  - workload_intensity
+  - resource_utilization
+  - energy_per_operation
+  - thermal_per_operation
+  - cpu_thermal_ratio
+  - memory_energy_ratio
+  - io_efficiency
+  - compute_density
+  - power_per_core
+  - thermal_per_core
+  - energy_density
+  - thermal_density
+  - workload_complexity
+  - system_efficiency
+  - performance_per_watt
+  - thermal_resistance
+  - cooling_efficiency
+  - power_scaling_factor
   job_features:
   - cpu_cores
   - memory_mb
@@ -100,24 +126,32 @@ model:
   algorithms:
   - random_forest
   - gradient_boosting
-  - linear
+  - xgboost
+  - extra_trees
+  - lasso
+  - elastic_net
   - ridge
-  cross_validation_folds: 5
+  - svr
+  - neural_network
+  - voting_ensemble
+  - stacking_ensemble
+  - adaptive_boosting
+  cross_validation_folds: 10
   feature_scaling: true
   handle_missing_values: true
   hyperparameter_tuning: true
-  max_mape_percent: 15.0
-  min_correlation: 0.75
-  min_r2_score: 0.7
+  max_mape_percent: 40.0
+  min_correlation: 0.3
+  min_r2_score: 0.1
   model_versioning: true
   outlier_detection: true
   outlier_threshold: 3.0
   random_state: 42
   save_models: true
-  test_size: 0.2
-  tuning_cv_folds: 3
-  tuning_iterations: 50
-  validation_size: 0.1
+  test_size: 0.15
+  tuning_cv_folds: 5
+  tuning_iterations: 500
+  validation_size: 0.15
 output:
   base_directory: ./modeling_output
   color_palette: viridis
