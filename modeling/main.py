@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import yaml
 import json
+import pandas as pd
 
 # Add modeling module to path
 sys.path.append(str(Path(__file__).parent))
@@ -69,14 +70,28 @@ class HPCModelingPipeline:
     
     def load_historical_data(self) -> Dict[str, any]:
         """
-        Load historical data from the database
+        Load historical data from the database and public datasets
         
         Returns:
             Dictionary with loaded datasets and metadata
         """
-        logger.info("Loading historical data from TimescaleDB")
+        logger.info("Loading historical data from TimescaleDB and public datasets")
         
         self.data_loader = HistoricalDataLoader(self.config)
+        
+        # Load public datasets first
+        public_data = self.load_public_datasets()
+        
+        # If we have public data, use it directly for now
+        if not public_data.empty:
+            logger.info(f"Using public dataset with {len(public_data)} records")
+            return {
+                'job_metrics': public_data,
+                'node_metrics': None,
+                'energy_predictions': None,
+                'processed_data': public_data,
+                'dataset_info': self.create_dataset_info_from_public(public_data)
+            }
         
         with self.data_loader as loader:
             # Load job metrics
@@ -331,24 +346,28 @@ class HPCModelingPipeline:
         
         self.validator = ModelValidator(self.config)
         
-        # Prepare data for validation
-        real_validation_data = {
-            'job_metrics': real_data['job_metrics'],
-            'node_metrics': real_data['node_metrics']
-        }
-        
         # Convert simulation results to DataFrames
         import pandas as pd
         
+        # Prepare data for validation
+        real_validation_data = {
+            'jobs': real_data['job_metrics'],
+            'node_metrics': real_data['node_metrics'] if real_data['node_metrics'] is not None else pd.DataFrame()
+        }
+        
+        # Debug: Check simulation results
+        logger.info(f"Simulation job metrics count: {len(simulation_results['metrics'].job_metrics)}")
+        logger.info(f"Simulation node metrics count: {len(simulation_results['metrics'].node_metrics)}")
+        
         simulated_validation_data = {
-            'job_metrics': pd.DataFrame(simulation_results['metrics'].job_metrics),
-            'node_metrics': pd.DataFrame(simulation_results['metrics'].node_metrics)
+            'jobs': pd.DataFrame(simulation_results['metrics'].job_metrics) if simulation_results['metrics'].job_metrics else None,
+            'node_metrics': pd.DataFrame(simulation_results['metrics'].node_metrics) if simulation_results['metrics'].node_metrics else None
         }
         
         # Add energy data if available
         if simulation_results['metrics'].energy_consumption:
             energy_predictions = real_data.get('energy_predictions')
-            if energy_predictions is not None:
+            if energy_predictions is not None and hasattr(energy_predictions, 'columns'):
                 # Map actual_energy_wh to energy_wh for validation
                 energy_predictions = energy_predictions.copy()
                 if 'actual_energy_wh' in energy_predictions.columns:
@@ -424,8 +443,8 @@ class HPCModelingPipeline:
                 'recommendations': validation_report.recommendations
             },
             'model_performance': {
-                'energy_model': self.models.get('energy', {}).get('metrics', {}),
-                'thermal_model': self.models.get('thermal', {}).get('metrics', {})
+                'energy_model': getattr(self.models.get('energy'), 'training_metrics', {}) if 'energy' in self.models else {},
+                'thermal_model': getattr(self.models.get('thermal'), 'training_metrics', {}) if 'thermal' in self.models else {}
             }
         }
         
@@ -546,8 +565,66 @@ This HLM system can be used for:
             }
             
         except Exception as e:
+            import traceback
             logger.error(f"Pipeline failed: {e}")
+            logger.error(f"Full traceback: {traceback.format_exc()}")
             raise
+    
+    def load_public_datasets(self) -> pd.DataFrame:
+        """Load and combine public HPC datasets."""
+        public_config = self.config.data_sources.get('public_datasets', {})
+        
+        if not public_config.get('enabled', False):
+            return pd.DataFrame()
+        
+        data_path = Path(public_config['path'])
+        if not data_path.exists():
+            logger.warning(f"Public dataset not found: {data_path}")
+            return pd.DataFrame()
+        
+        try:
+            df = pd.read_csv(data_path)
+            
+            # Convert datetime columns
+            datetime_cols = ['submit_time', 'start_time', 'end_time']
+            for col in datetime_cols:
+                if col in df.columns:
+                    df[col] = pd.to_datetime(df[col])
+            
+            # Apply validation split
+            if public_config.get('validation_split', 0) > 0:
+                split_ratio = public_config['validation_split']
+                train_size = int(len(df) * (1 - split_ratio))
+                df = df.iloc[:train_size]  # Use first part for training
+            
+            logger.info(f"Loaded {len(df)} records from public datasets")
+            return df
+            
+        except Exception as e:
+            logger.error(f"Failed to load public datasets: {e}")
+            return pd.DataFrame()
+    
+    def create_dataset_info_from_public(self, df: pd.DataFrame):
+        """Create dataset info from public data."""
+        from core.data_loader import DatasetInfo
+        
+        if df.empty:
+            return None
+            
+        start_time = df['start_time'].min() if 'start_time' in df.columns else datetime.now()
+        end_time = df['end_time'].max() if 'end_time' in df.columns else datetime.now()
+        total_jobs = len(df)
+        total_nodes = df['num_nodes'].sum() if 'num_nodes' in df.columns else 0
+        
+        return DatasetInfo(
+            start_time=start_time,
+            end_time=end_time,
+            total_jobs=total_jobs,
+            total_nodes=total_nodes,
+            data_points=len(df),
+            missing_data_percentage=0.0,
+            data_quality_score=100.0
+        )
 
 def main():
     """Main entry point"""
