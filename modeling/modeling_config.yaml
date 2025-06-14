@@ -1,285 +1,204 @@
-# High-Level Modeling (HLM) Configuration
-# This file contains configuration parameters for the HPC energy and thermal modeling system
-
-# Database Configuration
-database:
-  host: "localhost"
-  port: 5432
-  database: "hpc_energy_db"
-  username: "postgres"
-  password: "password"
-  connection_timeout: 30
-  query_timeout: 300
-
-# Simulation Configuration
-simulation:
-  # Cluster specifications
-  num_nodes: 10
-  cores_per_node: 16
-  memory_per_node_gb: 64
-  
-  # Simulation parameters
-  time_step_seconds: 60
-  warmup_time_minutes: 30
-  cooldown_time_minutes: 15
-  num_jobs: 100  # Number of synthetic jobs to generate
-  
-  # Environmental conditions
-  ambient_temperature_c: 22.0
-  cooling_efficiency: 0.85
-  humidity_percent: 45.0
-  
-  # Resource management
-  scheduling_algorithm: "fifo"  # fifo, backfill, fair_share
-  max_queue_size: 1000
-  job_timeout_hours: 24
-  
-  # Thermal modeling
-  thermal_time_constant: 300  # seconds
-  max_safe_temperature: 85.0  # Celsius
-  throttling_temperature: 90.0  # Celsius
-  
-  # Power modeling
-  idle_power_watts: 150
-  max_power_watts: 400
-  power_efficiency: 0.92
-
-# Model Configuration
-model:
-  # Training parameters
-  test_size: 0.2
-  validation_size: 0.1
-  random_state: 42
-  cross_validation_folds: 5
-  
-  # Feature engineering
-  feature_scaling: true
-  handle_missing_values: true
-  outlier_detection: true
-  outlier_threshold: 3.0  # standard deviations
-  
-  # Model selection
-  algorithms:
-    - "random_forest"
-    - "gradient_boosting"
-    - "linear"
-    - "ridge"
-  
-  # Hyperparameter tuning
-  hyperparameter_tuning: true
-  tuning_iterations: 50
-  tuning_cv_folds: 3
-  
-  # Model persistence
-  save_models: true
-  model_versioning: true
-  
-  # Performance thresholds
-  min_r2_score: 0.7
-  max_mape_percent: 15.0
-  min_correlation: 0.75
-
-# Output Configuration
-output:
-  # Directory structure
-  base_directory: "./modeling_output"
-  models_directory: "models"
-  reports_directory: "reports"
-  plots_directory: "plots"
-  data_directory: "data"
-  logs_directory: "logs"
-  
-  # File formats
-  data_format: "parquet"  # csv, parquet, hdf5
-  plot_format: "png"      # png, svg, pdf
-  report_format: "markdown" # markdown, html, pdf
-  
-  # Logging
-  log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR
-  log_to_file: true
-  log_rotation: true
-  max_log_size_mb: 100
-  
-  # Visualization
-  plot_style: "seaborn"
-  figure_size: [12, 8]
-  dpi: 300
-  color_palette: "viridis"
-  
-  # Report generation
-  include_plots: true
-  include_raw_data: false
-  include_model_details: true
-  include_validation_metrics: true
-  
-  # Data export
-  export_predictions: true
-  export_feature_importance: true
-  export_validation_results: true
-  compression: "gzip"
-
-# Advanced Configuration
 advanced:
-  # Parallel processing
-  n_jobs: -1  # Use all available cores
-  parallel_backend: "threading"  # threading, multiprocessing
-  
-  # Memory management
-  chunk_size: 10000
-  memory_limit_gb: 8
-  
-  # Caching
-  enable_caching: true
-  cache_directory: ".cache"
-  cache_size_limit_gb: 2
-  
-  # Debugging
-  debug_mode: false
-  verbose_logging: false
-  save_intermediate_results: false
-  
-  # Performance optimization
-  optimize_memory: true
-  use_gpu: false  # Enable if GPU acceleration is available
-  
-  # Data quality
-  data_quality_checks: true
-  min_data_points: 1000
-  max_missing_percentage: 10.0
-  
-  # Validation
-  cross_validation_strategy: "time_series"  # random, time_series, stratified
-  validation_window_days: 7
-  
-  # Monitoring
-  enable_monitoring: true
-  monitoring_interval_seconds: 300
   alert_thresholds:
-    memory_usage_percent: 90
     cpu_usage_percent: 95
     disk_usage_percent: 85
-
-# Feature Configuration
-features:
-  # Job-level features
-  job_features:
-    - "cpu_cores"
-    - "memory_mb"
-    - "duration_seconds"
-    - "job_type"
-    - "partition"
-    - "workload_pattern"
-  
-  # Resource usage features
-  usage_features:
-    - "cpu_usage"
-    - "memory_usage"
-    - "io_read_mbps"
-    - "io_write_mbps"
-    - "network_rx_mbps"
-    - "network_tx_mbps"
-  
-  # Thermal features
-  thermal_features:
-    - "avg_cpu_temp"
-    - "peak_cpu_temp"
-    - "ambient_temp"
-    - "cooling_efficiency"
-  
-  # Power features
-  power_features:
-    - "avg_power_watts"
-    - "peak_power_watts"
-    - "idle_power_watts"
-  
-  # Derived features
-  derived_features:
-    - "cpu_hours"
-    - "memory_hours"
-    - "effective_cpu_usage"
-    - "temp_variance"
-    - "power_efficiency"
-    - "thermal_efficiency"
-  
-  # Time-based features
-  temporal_features:
-    - "hour_of_day"
-    - "day_of_week"
-    - "is_weekend"
-    - "season"
-
-# Target Variables
-targets:
-  # Energy targets
-  energy:
-    - "estimated_energy_wh"
-    - "energy_efficiency"
-  
-  # Thermal targets
-  thermal:
-    - "avg_cpu_temp"
-    - "peak_cpu_temp"
-    - "temp_variance"
-  
-  # Performance targets
-  performance:
-    - "job_completion_time"
-    - "resource_utilization"
-    - "queue_wait_time"
-
-# Data Sources
+    memory_usage_percent: 90
+  cache_directory: .cache
+  cache_size_limit_gb: 2
+  chunk_size: 10000
+  cross_validation_strategy: time_series
+  data_quality_checks: true
+  debug_mode: false
+  enable_caching: true
+  enable_monitoring: true
+  max_missing_percentage: 10.0
+  memory_limit_gb: 8
+  min_data_points: 1000
+  monitoring_interval_seconds: 300
+  n_jobs: -1
+  optimize_memory: true
+  parallel_backend: threading
+  save_intermediate_results: false
+  use_gpu: false
+  validation_window_days: 7
+  verbose_logging: false
+data_loading:
+  combine_sources: true
+  feature_columns:
+  - duration_seconds
+  - num_nodes
+  - cpu_hours
+  - memory_gb
+  - estimated_power_w
+  - avg_temp_c
+  - max_temp_c
+  normalize_features: true
 data_sources:
-  # Primary data tables
-  job_metrics_table: "job_metrics"
-  node_metrics_table: "node_metrics"
-  energy_predictions_table: "energy_predictions"
-  
-  # Time range for training data
-  training_start_date: "2024-01-01"
-  training_end_date: "2024-12-31"
-  
-  # Data filtering
-  min_job_duration_seconds: 60
-  max_job_duration_hours: 48
-  exclude_failed_jobs: true
-  exclude_cancelled_jobs: true
-  
-  # Sampling
-  sample_rate: 1.0  # Use all available data
-  stratify_sampling: true
   balance_classes: false
-
-# Validation Configuration
+  energy_predictions_table: energy_predictions
+  exclude_cancelled_jobs: true
+  exclude_failed_jobs: true
+  job_metrics_table: job_metrics
+  max_job_duration_hours: 48
+  min_job_duration_seconds: 60
+  node_metrics_table: node_metrics
+  public_datasets:
+    enabled: true
+    path: ./data/public_datasets/combined_public_data.csv
+    sample_path: ./data/public_datasets/sample_public_data.csv
+    validation_split: 0.2
+    weight: 0.3
+  sample_rate: 1.0
+  stratify_sampling: true
+  training_end_date: '2024-12-31'
+  training_start_date: '2024-01-01'
+database:
+  connection_timeout: 30
+  database: hpc_energy_db
+  host: localhost
+  password: password
+  port: 5432
+  query_timeout: 300
+  username: postgres
+features:
+  derived_features:
+  - cpu_hours
+  - memory_hours
+  - effective_cpu_usage
+  - temp_variance
+  - power_efficiency
+  - thermal_efficiency
+  job_features:
+  - cpu_cores
+  - memory_mb
+  - duration_seconds
+  - job_type
+  - partition
+  - workload_pattern
+  power_features:
+  - avg_power_watts
+  - peak_power_watts
+  - idle_power_watts
+  temporal_features:
+  - hour_of_day
+  - day_of_week
+  - is_weekend
+  - season
+  thermal_features:
+  - avg_cpu_temp
+  - peak_cpu_temp
+  - ambient_temp
+  - cooling_efficiency
+  usage_features:
+  - cpu_usage
+  - memory_usage
+  - io_read_mbps
+  - io_write_mbps
+  - network_rx_mbps
+  - network_tx_mbps
+model:
+  algorithms:
+  - random_forest
+  - gradient_boosting
+  - linear
+  - ridge
+  cross_validation_folds: 5
+  feature_scaling: true
+  handle_missing_values: true
+  hyperparameter_tuning: true
+  max_mape_percent: 15.0
+  min_correlation: 0.75
+  min_r2_score: 0.7
+  model_versioning: true
+  outlier_detection: true
+  outlier_threshold: 3.0
+  random_state: 42
+  save_models: true
+  test_size: 0.2
+  tuning_cv_folds: 3
+  tuning_iterations: 50
+  validation_size: 0.1
+output:
+  base_directory: ./modeling_output
+  color_palette: viridis
+  compression: gzip
+  data_directory: data
+  data_format: parquet
+  dpi: 300
+  export_feature_importance: true
+  export_predictions: true
+  export_validation_results: true
+  figure_size:
+  - 12
+  - 8
+  include_model_details: true
+  include_plots: true
+  include_raw_data: false
+  include_validation_metrics: true
+  log_level: INFO
+  log_rotation: true
+  log_to_file: true
+  logs_directory: logs
+  max_log_size_mb: 100
+  models_directory: models
+  plot_format: png
+  plot_style: seaborn
+  plots_directory: plots
+  report_format: markdown
+  reports_directory: reports
+simulation:
+  ambient_temperature_c: 22.0
+  cooldown_time_minutes: 15
+  cooling_efficiency: 0.85
+  cores_per_node: 16
+  humidity_percent: 45.0
+  idle_power_watts: 150
+  job_timeout_hours: 24
+  max_power_watts: 400
+  max_queue_size: 1000
+  max_safe_temperature: 85.0
+  memory_per_node_gb: 64
+  num_jobs: 100
+  num_nodes: 10
+  power_efficiency: 0.92
+  scheduling_algorithm: fifo
+  thermal_time_constant: 300
+  throttling_temperature: 90.0
+  time_step_seconds: 60
+  warmup_time_minutes: 30
+targets:
+  energy:
+  - estimated_energy_wh
+  - energy_efficiency
+  performance:
+  - job_completion_time
+  - resource_utilization
+  - queue_wait_time
+  thermal:
+  - avg_cpu_temp
+  - peak_cpu_temp
+  - temp_variance
 validation:
-  # Validation strategy
-  strategy: "holdout"  # holdout, cross_validation, time_series_split
-  
-  # Metrics to calculate
-  metrics:
-    - "mae"
-    - "mse"
-    - "rmse"
-    - "mape"
-    - "r2"
-    - "correlation"
-    - "ks_statistic"
-  
-  # Comparison settings
   confidence_level: 0.95
-  significance_level: 0.05
-  
-  # Report generation
   generate_plots: true
+  metrics:
+  - mae
+  - mse
+  - rmse
+  - mape
+  - r2
+  - correlation
+  - ks_statistic
   plot_types:
-    - "scatter"
-    - "residuals"
-    - "distribution"
-    - "time_series"
-    - "feature_importance"
-  
-  # Validation thresholds
+  - scatter
+  - residuals
+  - distribution
+  - time_series
+  - feature_importance
+  significance_level: 0.05
+  strategy: holdout
   thresholds:
+    acceptable_r2: 0.7
     excellent_r2: 0.9
     good_r2: 0.8
-    acceptable_r2: 0.7
     max_acceptable_mape: 15.0
