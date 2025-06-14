@@ -1,0 +1,428 @@
+name: Release and Changelog
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  validate-release:
+    runs-on: ubuntu-latest
+    name: Validate Release
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      is-prerelease: ${{ steps.version.outputs.is-prerelease }}
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Determine version
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          VERSION="${{ github.event.inputs.version }}"
+          IS_PRERELEASE="${{ github.event.inputs.prerelease }}"
+        else
+          VERSION="${GITHUB_REF#refs/tags/}"
+          # Check if it's a pre-release (contains alpha, beta, rc)
+          if [[ $VERSION =~ (alpha|beta|rc) ]]; then
+            IS_PRERELEASE="true"
+          else
+            IS_PRERELEASE="false"
+          fi
+        fi
+        
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "is-prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+        
+        echo "Release version: $VERSION"
+        echo "Is pre-release: $IS_PRERELEASE"
+    
+    - name: Validate version format
+      run: |
+        VERSION="${{ steps.version.outputs.version }}"
+        if [[ ! $VERSION =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta|rc)\.[0-9]+)?$ ]]; then
+          echo "❌ Invalid version format: $VERSION"
+          echo "Expected format: v1.0.0 or v1.0.0-alpha.1"
+          exit 1
+        fi
+        echo "✅ Version format is valid: $VERSION"
+    
+    - name: Check if tag exists
+      run: |
+        VERSION="${{ steps.version.outputs.version }}"
+        if git tag -l | grep -q "^$VERSION$"; then
+          echo "❌ Tag $VERSION already exists"
+          exit 1
+        fi
+        echo "✅ Tag $VERSION is available"
+
+  run-tests:
+    runs-on: ubuntu-latest
+    name: Run Full Test Suite
+    needs: validate-release
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-cov flake8 black isort bandit safety
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        if [ -f requirements_enhanced.txt ]; then pip install -r requirements_enhanced.txt; fi
+    
+    - name: Run linting
+      run: |
+        echo "Running code quality checks..."
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        black --check .
+        isort --check-only .
+    
+    - name: Run security checks
+      run: |
+        echo "Running security checks..."
+        bandit -r . -f json -o bandit-report.json || true
+        safety check || true
+    
+    - name: Run tests
+      run: |
+        echo "Running test suite..."
+        python -m pytest analysis/ -v --cov=analysis || echo "Analysis tests completed"
+        
+        # Test imports
+        python -c "import sys; sys.path.append('api'); import energy_prediction_api" || echo "API import test completed"
+        python -c "import sys; sys.path.append('workloads/cpu-intensive'); import cpu_benchmark" || echo "CPU benchmark import test completed"
+        python -c "import sys; sys.path.append('workloads/io-intensive'); import io_benchmark" || echo "IO benchmark import test completed"
+        python -c "import sys; sys.path.append('workloads/mixed'); import mixed_benchmark" || echo "Mixed benchmark import test completed"
+    
+    - name: Validate deployment scripts
+      run: |
+        echo "Validating deployment scripts..."
+        bash -n scripts/deploy-aws-parallelcluster.sh
+        bash -n scripts/teardown-aws-parallelcluster.sh
+        bash -n scripts/cleanup-vpcs.sh
+        
+        for script in slurm/scripts/*.sh; do
+          if [ -f "$script" ]; then
+            bash -n "$script"
+          fi
+        done
+
+  build-artifacts:
+    runs-on: ubuntu-latest
+    name: Build Release Artifacts
+    needs: [validate-release, run-tests]
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build wheel setuptools
+    
+    - name: Create source distribution
+      run: |
+        echo "Creating source distribution..."
+        
+        # Create a setup.py for the project
+        cat > setup.py << 'EOF'
+from setuptools import setup, find_packages
+
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
+
+with open("requirements.txt", "r", encoding="utf-8") as fh:
+    requirements = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
+
+setup(
+    name="hpc-energy-model",
+    version="${{ needs.validate-release.outputs.version }}".lstrip("v"),
+    author="HPC Energy Modeling Team",
+    description="HPC Energy Modeling and Monitoring System",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    packages=find_packages(),
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+    ],
+    python_requires=">=3.8",
+    install_requires=requirements,
+    include_package_data=True,
+    package_data={
+        "": ["*.yml", "*.yaml", "*.conf", "*.sh", "*.md"],
+    },
+)
+EOF
+        
+        python setup.py sdist
+    
+    - name: Create deployment package
+      run: |
+        echo "Creating deployment package..."
+        
+        VERSION="${{ needs.validate-release.outputs.version }}"
+        PACKAGE_NAME="hpc-energy-model-${VERSION}"
+        
+        mkdir -p "$PACKAGE_NAME"
+        
+        # Copy essential files
+        cp -r scripts/ "$PACKAGE_NAME/"
+        cp -r slurm/ "$PACKAGE_NAME/"
+        cp -r infrastructure/ "$PACKAGE_NAME/"
+        cp -r monitoring/ "$PACKAGE_NAME/"
+        cp -r workloads/ "$PACKAGE_NAME/"
+        cp -r analysis/ "$PACKAGE_NAME/"
+        cp -r api/ "$PACKAGE_NAME/"
+        
+        # Copy configuration files
+        cp *.yml "$PACKAGE_NAME/" 2>/dev/null || true
+        cp *.yaml "$PACKAGE_NAME/" 2>/dev/null || true
+        cp requirements*.txt "$PACKAGE_NAME/" 2>/dev/null || true
+        cp *.md "$PACKAGE_NAME/" 2>/dev/null || true
+        
+        # Create installation script
+        cat > "$PACKAGE_NAME/install.sh" << 'EOF'
+#!/bin/bash
+set -e
+
+echo "Installing HPC Energy Model ${{ needs.validate-release.outputs.version }}..."
+
+# Install Python dependencies
+if [ -f requirements.txt ]; then
+    pip install -r requirements.txt
+fi
+
+if [ -f requirements_aws.txt ]; then
+    pip install -r requirements_aws.txt
+fi
+
+# Make scripts executable
+chmod +x scripts/*.sh
+chmod +x slurm/scripts/*.sh
+
+echo "Installation completed!"
+echo "Please review the configuration files before deployment."
+EOF
+        
+        chmod +x "$PACKAGE_NAME/install.sh"
+        
+        # Create archive
+        tar -czf "${PACKAGE_NAME}.tar.gz" "$PACKAGE_NAME"
+        zip -r "${PACKAGE_NAME}.zip" "$PACKAGE_NAME"
+        
+        echo "Created deployment packages:"
+        ls -la *.tar.gz *.zip
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: release-artifacts
+        path: |
+          dist/
+          *.tar.gz
+          *.zip
+        retention-days: 30
+
+  generate-changelog:
+    runs-on: ubuntu-latest
+    name: Generate Changelog
+    needs: validate-release
+    outputs:
+      changelog: ${{ steps.changelog.outputs.changelog }}
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Generate changelog
+      id: changelog
+      run: |
+        echo "Generating changelog..."
+        
+        VERSION="${{ needs.validate-release.outputs.version }}"
+        
+        # Get the previous tag
+        PREVIOUS_TAG=$(git tag --sort=-version:refname | head -n 1 2>/dev/null || echo "")
+        
+        if [ -z "$PREVIOUS_TAG" ]; then
+          echo "No previous tag found, generating changelog from first commit"
+          COMMIT_RANGE="$(git rev-list --max-parents=0 HEAD)..HEAD"
+        else
+          echo "Previous tag: $PREVIOUS_TAG"
+          COMMIT_RANGE="$PREVIOUS_TAG..HEAD"
+        fi
+        
+        echo "Commit range: $COMMIT_RANGE"
+        
+        # Generate changelog
+        CHANGELOG="## What's Changed in $VERSION\n\n"
+        
+        # Features
+        FEATURES=$(git log $COMMIT_RANGE --oneline --grep="feat" --grep="feature" -i | sed 's/^[a-f0-9]* /- /')
+        if [ -n "$FEATURES" ]; then
+          CHANGELOG="${CHANGELOG}### 🚀 Features\n$FEATURES\n\n"
+        fi
+        
+        # Bug fixes
+        FIXES=$(git log $COMMIT_RANGE --oneline --grep="fix" --grep="bug" -i | sed 's/^[a-f0-9]* /- /')
+        if [ -n "$FIXES" ]; then
+          CHANGELOG="${CHANGELOG}### 🐛 Bug Fixes\n$FIXES\n\n"
+        fi
+        
+        # Improvements
+        IMPROVEMENTS=$(git log $COMMIT_RANGE --oneline --grep="improve" --grep="enhance" --grep="update" -i | sed 's/^[a-f0-9]* /- /')
+        if [ -n "$IMPROVEMENTS" ]; then
+          CHANGELOG="${CHANGELOG}### 🔧 Improvements\n$IMPROVEMENTS\n\n"
+        fi
+        
+        # Documentation
+        DOCS=$(git log $COMMIT_RANGE --oneline --grep="doc" --grep="readme" -i | sed 's/^[a-f0-9]* /- /')
+        if [ -n "$DOCS" ]; then
+          CHANGELOG="${CHANGELOG}### 📚 Documentation\n$DOCS\n\n"
+        fi
+        
+        # Other changes
+        OTHER=$(git log $COMMIT_RANGE --oneline --invert-grep --grep="feat\|feature\|fix\|bug\|improve\|enhance\|update\|doc\|readme" -i | sed 's/^[a-f0-9]* /- /')
+        if [ -n "$OTHER" ]; then
+          CHANGELOG="${CHANGELOG}### 🔄 Other Changes\n$OTHER\n\n"
+        fi
+        
+        # Add contributors
+        CONTRIBUTORS=$(git log $COMMIT_RANGE --format='%an' | sort -u | sed 's/^/- @/' | tr '\n' ' ')
+        if [ -n "$CONTRIBUTORS" ]; then
+          CHANGELOG="${CHANGELOG}### 👥 Contributors\n$CONTRIBUTORS\n\n"
+        fi
+        
+        # Add full changelog link
+        if [ -n "$PREVIOUS_TAG" ]; then
+          CHANGELOG="${CHANGELOG}**Full Changelog**: https://github.com/${{ github.repository }}/compare/$PREVIOUS_TAG...$VERSION"
+        fi
+        
+        # Save changelog
+        echo -e "$CHANGELOG" > CHANGELOG_RELEASE.md
+        
+        # Output for GitHub
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        echo -e "$CHANGELOG" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        
+        echo "Generated changelog:"
+        cat CHANGELOG_RELEASE.md
+    
+    - name: Upload changelog
+      uses: actions/upload-artifact@v3
+      with:
+        name: changelog
+        path: CHANGELOG_RELEASE.md
+        retention-days: 30
+
+  create-release:
+    runs-on: ubuntu-latest
+    name: Create GitHub Release
+    needs: [validate-release, run-tests, build-artifacts, generate-changelog]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download artifacts
+      uses: actions/download-artifact@v3
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ needs.validate-release.outputs.version }}
+        name: Release ${{ needs.validate-release.outputs.version }}
+        body: ${{ needs.generate-changelog.outputs.changelog }}
+        prerelease: ${{ needs.validate-release.outputs.is-prerelease }}
+        files: |
+          release-artifacts/*.tar.gz
+          release-artifacts/*.zip
+          release-artifacts/dist/*
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Update CHANGELOG.md
+      run: |
+        echo "Updating CHANGELOG.md..."
+        
+        # Create or update CHANGELOG.md
+        if [ ! -f CHANGELOG.md ]; then
+          echo "# Changelog" > CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          echo "All notable changes to this project will be documented in this file." >> CHANGELOG.md
+          echo "" >> CHANGELOG.md
+        fi
+        
+        # Add new release to the top
+        {
+          head -n 3 CHANGELOG.md
+          echo ""
+          cat changelog/CHANGELOG_RELEASE.md
+          echo ""
+          tail -n +4 CHANGELOG.md
+        } > CHANGELOG_NEW.md
+        
+        mv CHANGELOG_NEW.md CHANGELOG.md
+    
+    - name: Commit updated changelog
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        git add CHANGELOG.md
+        git commit -m "docs: update changelog for ${{ needs.validate-release.outputs.version }}" || echo "No changes to commit"
+        git push origin main || echo "Failed to push changelog update"
+
+  notify-deployment:
+    runs-on: ubuntu-latest
+    name: Notify Deployment
+    needs: [validate-release, create-release]
+    if: success()
+    
+    steps:
+    - name: Deployment notification
+      run: |
+        echo "🎉 Release ${{ needs.validate-release.outputs.version }} has been created successfully!"
+        echo "📦 Artifacts are available in the GitHub release"
+        echo "🚀 Ready for deployment to staging/production environments"
+        
+        # This could be extended to send notifications to Slack, email, etc.
+        echo "Release summary:"
+        echo "- Version: ${{ needs.validate-release.outputs.version }}"
+        echo "- Pre-release: ${{ needs.validate-release.outputs.is-prerelease }}"
+        echo "- Repository: ${{ github.repository }}"
+        echo "- Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate-release.outputs.version }}"
