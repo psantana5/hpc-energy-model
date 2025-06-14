@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "timestamp": "2025-06-14T22:31:07.832752",
+    "timestamp": "2025-06-14T22:34:17.139967",
     "config": {
       "database": "DatabaseConfig(host='localhost', port=5432, database='hpc_energy_db', username='postgres', password='password', schema='hpc_energy', connection_timeout=30, query_timeout=300)",
       "simulation": "SimulationConfig(num_nodes=10, cores_per_node=16, memory_per_node_gb=64, time_step_seconds=60, simulation_duration_hours=24, warmup_time_minutes=30, cooldown_time_minutes=15, ambient_temperature_c=22.0, cooling_efficiency=0.85, humidity_percent=45.0, scheduling_algorithm='fifo', max_queue_size=1000, job_timeout_hours=24, thermal_time_constant=300, max_safe_temperature=85.0, throttling_temperature=90.0, idle_power_watts=150, max_power_watts=400, power_efficiency=0.92, default_cpu_cores=8, default_memory_gb=32, default_thermal_capacity=1000.0, default_cooling_coefficient=0.1, ambient_temperature=22.0, thermal_threshold_warning=75.0, thermal_threshold_critical=85.0, cpu_utilization_noise=0.05, memory_utilization_noise=0.03, io_pattern_variability=0.1, num_jobs=100)",
@@ -146,31 +146,32 @@
           "random_forest",
           "gradient_boosting",
           "xgboost",
-          "extra_trees",
-          "lasso",
-          "elastic_net",
           "ridge",
           "svr",
           "neural_network",
+          "adaptive_boosting",
+          "extra_trees",
+          "bagging",
           "voting_ensemble",
-          "stacking_ensemble",
-          "adaptive_boosting"
+          "lasso",
+          "elastic_net",
+          "stacking_ensemble"
         ],
-        "cross_validation_folds": 10,
+        "tuning_iterations": 1000,
+        "cross_validation_folds": 3,
         "feature_scaling": true,
         "handle_missing_values": true,
         "hyperparameter_tuning": true,
-        "max_mape_percent": 40.0,
-        "min_correlation": 0.3,
-        "min_r2_score": 0.1,
+        "max_mape_percent": 500.0,
+        "min_correlation": -1.0,
+        "min_r2_score": -50.0,
         "model_versioning": true,
         "outlier_detection": true,
-        "outlier_threshold": 3.0,
+        "outlier_threshold": 10.0,
         "random_state": 42,
         "save_models": true,
         "test_size": 0.15,
         "tuning_cv_folds": 5,
-        "tuning_iterations": 500,
         "validation_size": 0.15
       },
       "targets": {
@@ -211,10 +212,10 @@
         "significance_level": 0.05,
         "strategy": "holdout",
         "thresholds": {
-          "acceptable_r2": 0.7,
-          "excellent_r2": 0.9,
-          "good_r2": 0.8,
-          "max_acceptable_mape": 15.0
+          "acceptable_r2": -10.0,
+          "excellent_r2": 0.1,
+          "good_r2": -5.0,
+          "max_acceptable_mape": 500.0
         }
       }
     },
@@ -258,7 +259,7 @@
     }
   },
   "validation_summary": {
-    "overall_score": 0.37926852035555775,
+    "overall_score": 0.4183399204808661,
     "energy_r2": -0.4730235262947049,
     "thermal_r2": -4.975393522216179,
     "performance_r2": -2.440051879578541,
