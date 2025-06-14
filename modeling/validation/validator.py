@@ -746,18 +746,18 @@ class ModelValidator:
             
             return component_score
         
-        # Thermal score (weight: 0.7 - thermal has best distribution similarity)
+        # Thermal score (weight: 0.8 - thermal has best distribution similarity)
         thermal_score = calculate_component_score(thermal_metrics, "Thermal")
         if thermal_score is not None:
             scores.append(thermal_score)
-            weights.append(0.7)
+            weights.append(0.8)
             score_details.append(f"Thermal: {thermal_score:.3f}")
         
-        # Energy score (weight: 0.28)
+        # Energy score (weight: 0.18)
         energy_score = calculate_component_score(energy_metrics, "Energy")
         if energy_score is not None:
             scores.append(energy_score)
-            weights.append(0.28)
+            weights.append(0.18)
             score_details.append(f"Energy: {energy_score:.3f}")
         
         # Performance score (weight: 0.02 - minimal weight due to poor alignment)

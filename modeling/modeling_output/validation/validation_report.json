@@ -1,8 +1,8 @@
 {
-  "timestamp": "2025-06-14T22:29:30.228319",
+  "timestamp": "2025-06-14T22:31:06.895994",
   "model_name": "HPC_Energy_Simulation",
   "validation_type": "comprehensive",
-  "overall_score": 0.3379480119970198,
+  "overall_score": 0.37926852035555775,
   "energy_metrics": {
     "mae": 32488.16450482966,
     "mse": 3286432787.023998,

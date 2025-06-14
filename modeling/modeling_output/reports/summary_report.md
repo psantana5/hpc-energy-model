@@ -1,7 +1,7 @@
 
 # HPC Energy Modeling Report
 
-**Generated:** 2025-06-14T22:29:31.145786
+**Generated:** 2025-06-14T22:31:07.832752
 
 ## Executive Summary
 
@@ -9,7 +9,7 @@ This report presents the results of High-Level Modeling (HLM) simulation for HPC
 
 ### Key Metrics
 
-- **Overall Validation Score:** 0.34/1.0
+- **Overall Validation Score:** 0.38/1.0
 - **Energy Model Accuracy (R²):** -0.473
 - **Thermal Model Accuracy (R²):** -4.975
 - **Performance Model Accuracy (R²):** -2.440

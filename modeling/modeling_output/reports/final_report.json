@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "timestamp": "2025-06-14T22:29:31.145786",
+    "timestamp": "2025-06-14T22:31:07.832752",
     "config": {
       "database": "DatabaseConfig(host='localhost', port=5432, database='hpc_energy_db', username='postgres', password='password', schema='hpc_energy', connection_timeout=30, query_timeout=300)",
       "simulation": "SimulationConfig(num_nodes=10, cores_per_node=16, memory_per_node_gb=64, time_step_seconds=60, simulation_duration_hours=24, warmup_time_minutes=30, cooldown_time_minutes=15, ambient_temperature_c=22.0, cooling_efficiency=0.85, humidity_percent=45.0, scheduling_algorithm='fifo', max_queue_size=1000, job_timeout_hours=24, thermal_time_constant=300, max_safe_temperature=85.0, throttling_temperature=90.0, idle_power_watts=150, max_power_watts=400, power_efficiency=0.92, default_cpu_cores=8, default_memory_gb=32, default_thermal_capacity=1000.0, default_cooling_coefficient=0.1, ambient_temperature=22.0, thermal_threshold_warning=75.0, thermal_threshold_critical=85.0, cpu_utilization_noise=0.05, memory_utilization_noise=0.03, io_pattern_variability=0.1, num_jobs=100)",
@@ -258,7 +258,7 @@
     }
   },
   "validation_summary": {
-    "overall_score": 0.3379480119970198,
+    "overall_score": 0.37926852035555775,
     "energy_r2": -0.4730235262947049,
     "thermal_r2": -4.975393522216179,
     "performance_r2": -2.440051879578541,
