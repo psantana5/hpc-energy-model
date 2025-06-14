@@ -309,7 +309,9 @@ class HPCClusterSimulator:
                 # Find suitable node
                 suitable_node = None
                 for node_id, node in self.nodes.items():
-                    if (node.cpu_resource.count >= job.cpu_cores and 
+                    # Check if node has enough available CPU cores and memory
+                    available_cpu_cores = node.cpu_resource.capacity - node.cpu_resource.count
+                    if (available_cpu_cores >= job.cpu_cores and 
                         node.memory_resource.level >= job.memory_mb):
                         suitable_node = node
                         break
