@@ -198,12 +198,20 @@ class ModelingConfig:
         with open(config_path, 'r') as f:
             config_data = yaml.safe_load(f)
         
-        return cls(
+        # Create instance with basic configs
+        instance = cls(
             database=DatabaseConfig(**config_data.get('database', {})),
             simulation=SimulationConfig(**config_data.get('simulation', {})),
             models=ModelConfig(**config_data.get('models', {})),
             output=OutputConfig(**config_data.get('output', {}))
         )
+        
+        # Add any additional config sections as attributes
+        for key, value in config_data.items():
+            if key not in ['database', 'simulation', 'models', 'output']:
+                setattr(instance, key, value)
+        
+        return instance
     
     @classmethod
     def from_yaml(cls, config_path: str):
