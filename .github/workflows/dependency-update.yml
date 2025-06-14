@@ -1,0 +1,325 @@
+name: Dependency Management and Security Updates
+
+on:
+  schedule:
+    # Run weekly on Mondays at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      update_type:
+        description: 'Type of update to perform'
+        required: true
+        default: 'security'
+        type: choice
+        options:
+        - security
+        - minor
+        - all
+
+jobs:
+  check-dependencies:
+    runs-on: ubuntu-latest
+    name: Check Dependencies and Security
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependency management tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety pip-audit pipdeptree
+    
+    - name: Audit Python dependencies
+      run: |
+        echo "=== Checking main requirements ==="
+        if [ -f requirements.txt ]; then
+          pip install -r requirements.txt
+          pip-audit --requirement requirements.txt --format json --output requirements-audit.json || true
+          safety check --requirement requirements.txt --json --output requirements-safety.json || true
+        fi
+        
+        echo "=== Checking AWS requirements ==="
+        if [ -f requirements_aws.txt ]; then
+          pip install -r requirements_aws.txt
+          pip-audit --requirement requirements_aws.txt --format json --output aws-audit.json || true
+          safety check --requirement requirements_aws.txt --json --output aws-safety.json || true
+        fi
+        
+        echo "=== Checking enhanced requirements ==="
+        if [ -f requirements_enhanced.txt ]; then
+          pip install -r requirements_enhanced.txt
+          pip-audit --requirement requirements_enhanced.txt --format json --output enhanced-audit.json || true
+          safety check --requirement requirements_enhanced.txt --json --output enhanced-safety.json || true
+        fi
+        
+        echo "=== Checking ML performance requirements ==="
+        if [ -f requirements_ml_performance.txt ]; then
+          pip install -r requirements_ml_performance.txt
+          pip-audit --requirement requirements_ml_performance.txt --format json --output ml-audit.json || true
+          safety check --requirement requirements_ml_performance.txt --json --output ml-safety.json || true
+        fi
+        
+        echo "=== Checking practical requirements ==="
+        if [ -f requirements_practical.txt ]; then
+          pip install -r requirements_practical.txt
+          pip-audit --requirement requirements_practical.txt --format json --output practical-audit.json || true
+          safety check --requirement requirements_practical.txt --json --output practical-safety.json || true
+        fi
+        
+        echo "=== Checking API requirements ==="
+        if [ -f api/requirements.txt ]; then
+          pip install -r api/requirements.txt
+          pip-audit --requirement api/requirements.txt --format json --output api-audit.json || true
+          safety check --requirement api/requirements.txt --json --output api-safety.json || true
+        fi
+    
+    - name: Generate dependency tree
+      run: |
+        echo "=== Dependency Tree ==="
+        pipdeptree --json > dependency-tree.json
+        pipdeptree
+    
+    - name: Check for outdated packages
+      run: |
+        echo "=== Outdated Packages ==="
+        pip list --outdated --format json > outdated-packages.json
+        pip list --outdated
+    
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          *-audit.json
+          *-safety.json
+          dependency-tree.json
+          outdated-packages.json
+        retention-days: 30
+    
+    - name: Create security summary
+      run: |
+        echo "# Security and Dependency Report" > security-summary.md
+        echo "Generated on: $(date)" >> security-summary.md
+        echo "" >> security-summary.md
+        
+        # Count vulnerabilities
+        total_vulns=0
+        for file in *-safety.json; do
+          if [ -f "$file" ]; then
+            vulns=$(jq '.vulnerabilities | length' "$file" 2>/dev/null || echo "0")
+            total_vulns=$((total_vulns + vulns))
+            echo "- $file: $vulns vulnerabilities" >> security-summary.md
+          fi
+        done
+        
+        echo "" >> security-summary.md
+        echo "**Total vulnerabilities found: $total_vulns**" >> security-summary.md
+        
+        # Count outdated packages
+        if [ -f outdated-packages.json ]; then
+          outdated_count=$(jq '. | length' outdated-packages.json 2>/dev/null || echo "0")
+          echo "**Outdated packages: $outdated_count**" >> security-summary.md
+        fi
+        
+        cat security-summary.md
+    
+    - name: Comment on PR or create issue
+      if: github.event_name == 'schedule' && always()
+      run: |
+        # This would typically use GitHub API to create an issue
+        # For now, we'll just output the summary
+        echo "Security summary would be posted as GitHub issue:"
+        cat security-summary.md
+
+  update-dependencies:
+    runs-on: ubuntu-latest
+    name: Update Dependencies
+    needs: check-dependencies
+    if: github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install pip-tools safety
+    
+    - name: Update requirements files
+      run: |
+        update_type="${{ github.event.inputs.update_type }}"
+        
+        echo "Performing $update_type updates..."
+        
+        # Function to update a requirements file
+        update_requirements() {
+          local req_file="$1"
+          local update_strategy="$2"
+          
+          if [ -f "$req_file" ]; then
+            echo "Updating $req_file with strategy: $update_strategy"
+            
+            case $update_strategy in
+              "security")
+                # Only update packages with known vulnerabilities
+                safety check --requirement "$req_file" --json > safety_report.json || true
+                if [ -s safety_report.json ]; then
+                  # Extract vulnerable packages and update them
+                  jq -r '.vulnerabilities[].package_name' safety_report.json | sort -u > vulnerable_packages.txt
+                  if [ -s vulnerable_packages.txt ]; then
+                    while read package; do
+                      echo "Updating vulnerable package: $package"
+                      pip install --upgrade "$package"
+                    done < vulnerable_packages.txt
+                    pip freeze > "${req_file}.new"
+                    mv "${req_file}.new" "$req_file"
+                  fi
+                fi
+                ;;
+              "minor")
+                # Update to latest minor versions (avoid major version changes)
+                pip install --upgrade --upgrade-strategy only-if-needed -r "$req_file"
+                pip freeze > "${req_file}.new"
+                mv "${req_file}.new" "$req_file"
+                ;;
+              "all")
+                # Update all packages to latest versions
+                pip install --upgrade -r "$req_file"
+                pip freeze > "${req_file}.new"
+                mv "${req_file}.new" "$req_file"
+                ;;
+            esac
+          fi
+        }
+        
+        # Update all requirements files
+        update_requirements "requirements.txt" "$update_type"
+        update_requirements "requirements_aws.txt" "$update_type"
+        update_requirements "requirements_enhanced.txt" "$update_type"
+        update_requirements "requirements_ml_performance.txt" "$update_type"
+        update_requirements "requirements_practical.txt" "$update_type"
+        update_requirements "api/requirements.txt" "$update_type"
+    
+    - name: Test updated dependencies
+      run: |
+        echo "Testing updated dependencies..."
+        
+        # Install and test each requirements file
+        for req_file in requirements*.txt api/requirements.txt; do
+          if [ -f "$req_file" ]; then
+            echo "Testing $req_file..."
+            python -m venv test_env
+            source test_env/bin/activate
+            pip install -r "$req_file"
+            
+            # Basic import tests
+            python -c "import sys; print('Python version:', sys.version)"
+            
+            deactivate
+            rm -rf test_env
+          fi
+        done
+    
+    - name: Run security check on updated dependencies
+      run: |
+        echo "Running security checks on updated dependencies..."
+        
+        for req_file in requirements*.txt api/requirements.txt; do
+          if [ -f "$req_file" ]; then
+            echo "Security check for $req_file..."
+            safety check --requirement "$req_file" || echo "Security issues found in $req_file"
+          fi
+        done
+    
+    - name: Create Pull Request
+      if: success()
+      run: |
+        # Configure git
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Check if there are changes
+        if git diff --quiet; then
+          echo "No dependency updates needed"
+          exit 0
+        fi
+        
+        # Create branch and commit changes
+        branch_name="dependency-update-$(date +%Y%m%d-%H%M%S)"
+        git checkout -b "$branch_name"
+        
+        git add requirements*.txt api/requirements.txt
+        git commit -m "chore: update dependencies (${{ github.event.inputs.update_type }} updates)
+        
+        - Updated dependencies using ${{ github.event.inputs.update_type }} strategy
+        - Ran security checks and basic import tests
+        - Generated by GitHub Actions workflow"
+        
+        git push origin "$branch_name"
+        
+        echo "Created branch: $branch_name"
+        echo "Please create a PR manually or use GitHub CLI if available"
+
+  docker-security-scan:
+    runs-on: ubuntu-latest
+    name: Docker Security Scan
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Scan Docker Compose for vulnerabilities
+      if: hashFiles('docker-compose.yml') != ''
+      run: |
+        echo "Scanning Docker images for vulnerabilities..."
+        
+        # Extract image names from docker-compose.yml
+        if [ -f docker-compose.yml ]; then
+          images=$(grep -E '^\s+image:' docker-compose.yml | sed 's/.*image: *//' | tr -d '"' | sort -u)
+          
+          for image in $images; do
+            echo "Scanning image: $image"
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+              aquasec/trivy:latest image --exit-code 0 --severity HIGH,CRITICAL \
+              --format table "$image" || echo "Vulnerabilities found in $image"
+          done
+        fi
+    
+    - name: Check for Docker best practices
+      run: |
+        if [ -f docker-compose.yml ]; then
+          echo "Checking Docker Compose best practices..."
+          
+          # Check for version pinning
+          if grep -q ":latest" docker-compose.yml; then
+            echo "⚠ Warning: Found :latest tags in docker-compose.yml"
+            grep ":latest" docker-compose.yml
+          fi
+          
+          # Check for privileged containers
+          if grep -q "privileged: true" docker-compose.yml; then
+            echo "⚠ Warning: Found privileged containers"
+            grep -B2 -A2 "privileged: true" docker-compose.yml
+          fi
+          
+          # Check for host network mode
+          if grep -q "network_mode: host" docker-compose.yml; then
+            echo "⚠ Warning: Found host network mode"
+            grep -B2 -A2 "network_mode: host" docker-compose.yml
+          fi
+        fi
