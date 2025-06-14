@@ -516,7 +516,7 @@ create_cluster() {
             log_error "Unable to get cluster status. Please check manually."
             exit 1
         else
-            log_info "Cluster status: $status. Waiting..."
+            log_info "Cluster status: $status. Waiting... Note that this will take a long time..."
             sleep 60
         fi
     done
