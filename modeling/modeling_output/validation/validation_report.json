@@ -1,40 +1,40 @@
 {
-  "timestamp": "2025-06-14T21:56:56.914824",
+  "timestamp": "2025-06-14T22:13:36.871421",
   "model_name": "HPC_Energy_Simulation",
   "validation_type": "comprehensive",
-  "overall_score": 0.0,
+  "overall_score": 0.1965618872317958,
   "energy_metrics": {
-    "mae": 32270.20613906487,
-    "mse": 3372546495.6107564,
-    "rmse": 58073.62995035489,
-    "mape": 99.02399291507261,
-    "r2": -0.44666603425676144,
-    "correlation": 0.02443413674785061,
-    "ks_statistic": 0.9902777777777778,
+    "mae": 32488.16450482966,
+    "mse": 3286432787.023998,
+    "rmse": 57327.41741107825,
+    "mape": 99.21534359169189,
+    "r2": -0.4730235262947049,
+    "correlation": 0.0443566673406141,
+    "ks_statistic": 0.9965277777777778,
     "ks_pvalue": 0.0,
-    "distribution_similarity": 0.009722222222222188
+    "distribution_similarity": 0.00347222222222221
   },
   "thermal_metrics": {
-    "mae": 16.591392838194757,
-    "mse": 373.7980854531814,
-    "rmse": 19.33385852470172,
-    "mape": 37.34485464956546,
-    "r2": -4.829445745125635,
-    "correlation": 0.004166378663215226,
-    "ks_statistic": 0.5683333333333334,
+    "mae": 16.88381594059704,
+    "mse": 382.8532717235452,
+    "rmse": 19.56663669932943,
+    "mape": 37.68968470168938,
+    "r2": -5.220348667794964,
+    "correlation": -0.01963978330083102,
+    "ks_statistic": 0.5704166666666667,
     "ks_pvalue": 0.0,
-    "distribution_similarity": 0.43166666666666664
+    "distribution_similarity": 0.4295833333333333
   },
   "performance_metrics": {
-    "mae": NaN,
-    "mse": NaN,
-    "rmse": NaN,
-    "mape": NaN,
-    "r2": NaN,
-    "correlation": NaN,
-    "ks_statistic": NaN,
-    "ks_pvalue": NaN,
-    "distribution_similarity": NaN
+    "mae": 38854.55,
+    "mse": 2117482576.95,
+    "rmse": 46016.11214509544,
+    "mape": 87.90352922414002,
+    "r2": -2.440051879578541,
+    "correlation": 0.0,
+    "ks_statistic": 0.96,
+    "ks_pvalue": 1.4287357500157535e-51,
+    "distribution_similarity": 0.040000000000000036
   },
   "detailed_analysis": {
     "data_coverage": {
@@ -61,7 +61,8 @@
   "recommendations": [
     "Energy model accuracy is below 70%. Consider improving power models or adding more features.",
     "Energy prediction error is high (>20%). Review workload characterization and power profiles.",
-    "Thermal model needs improvement. Consider more sophisticated thermal dynamics or cooling models."
+    "Thermal model needs improvement. Consider more sophisticated thermal dynamics or cooling models.",
+    "Job performance prediction could be improved. Review scheduling algorithms and resource contention models."
   ],
   "plots_generated": [
     "modeling_output/validation/energy_validation.png",
