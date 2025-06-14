@@ -1,0 +1,37 @@
+# Grafana dashboards provisioning configuration
+
+apiVersion: 1
+
+providers:
+  # HPC Energy Model dashboards
+  - name: 'hpc-energy-dashboards'
+    orgId: 1
+    folder: 'HPC Energy Model'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/hpc
+
+  # System monitoring dashboards
+  - name: 'system-dashboards'
+    orgId: 1
+    folder: 'System Monitoring'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/system
+
+  # Slurm specific dashboards
+  - name: 'slurm-dashboards'
+    orgId: 1
+    folder: 'Slurm Analytics'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/slurm
