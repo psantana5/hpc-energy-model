@@ -1,0 +1,206 @@
+version: '3.8'
+
+services:
+  # TimescaleDB for time series data
+  timescaledb:
+    image: timescale/timescaledb:latest-pg15
+    container_name: hpc-timescaledb
+    environment:
+      POSTGRES_DB: hpc_energy
+      POSTGRES_USER: hpc_user
+      POSTGRES_PASSWORD: hpc_password
+      TIMESCALEDB_TELEMETRY: 'off'
+    ports:
+      - "5432:5432"
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+      - ./infrastructure/timescaledb/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - hpc-network
+    restart: unless-stopped
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: hpc-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./infrastructure/prometheus/rules:/etc/prometheus/rules
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    networks:
+      - hpc-network
+    restart: unless-stopped
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: hpc-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infrastructure/grafana/provisioning:/etc/grafana/provisioning
+      - ./infrastructure/grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - hpc-network
+    restart: unless-stopped
+    depends_on:
+      - timescaledb
+      - prometheus
+
+  # Node Exporter for system metrics
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: hpc-node-exporter
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - hpc-network
+    restart: unless-stopped
+
+  # Custom thermal exporter
+  thermal-exporter:
+    build:
+      context: ./monitoring/exporters/thermal-exporter
+      dockerfile: Dockerfile
+    container_name: hpc-thermal-exporter
+    ports:
+      - "9200:9200"
+    volumes:
+      - /sys/class/thermal:/sys/class/thermal:ro
+      - /proc/cpuinfo:/proc/cpuinfo:ro
+    environment:
+      EXPORTER_PORT: 9200
+      POLLING_INTERVAL: 5
+    networks:
+      - hpc-network
+    restart: unless-stopped
+    privileged: true
+
+  # Custom job metrics exporter
+  job-exporter:
+    build:
+      context: ./monitoring/exporters/job-exporter
+      dockerfile: Dockerfile
+    container_name: hpc-job-exporter
+    ports:
+      - "9300:9300"
+    environment:
+      EXPORTER_PORT: 9300
+      SLURM_CONF_PATH: /etc/slurm/slurm.conf
+      TIMESCALEDB_HOST: timescaledb
+      TIMESCALEDB_PORT: 5432
+      TIMESCALEDB_DB: hpc_energy
+      TIMESCALEDB_USER: hpc_user
+      TIMESCALEDB_PASSWORD: hpc_password
+    volumes:
+      - /etc/slurm:/etc/slurm:ro
+      - /var/log/slurm:/var/log/slurm:ro
+    networks:
+      - hpc-network
+    restart: unless-stopped
+    depends_on:
+      - timescaledb
+
+  # Energy prediction API
+  energy-predictor-api:
+    build:
+      context: ./api/energy-predictor
+      dockerfile: Dockerfile
+    container_name: hpc-energy-predictor
+    ports:
+      - "8000:8000"
+    environment:
+      TIMESCALEDB_HOST: timescaledb
+      TIMESCALEDB_PORT: 5432
+      TIMESCALEDB_DB: hpc_energy
+      TIMESCALEDB_USER: hpc_user
+      TIMESCALEDB_PASSWORD: hpc_password
+      MODEL_PATH: /app/models
+    volumes:
+      - ./ml-models/trained:/app/models:ro
+      - ./results/datasets:/app/data:ro
+    networks:
+      - hpc-network
+    restart: unless-stopped
+    depends_on:
+      - timescaledb
+
+  # Jupyter Lab for analysis
+  jupyter:
+    image: jupyter/scipy-notebook:latest
+    container_name: hpc-jupyter
+    ports:
+      - "8888:8888"
+    environment:
+      JUPYTER_ENABLE_LAB: 'yes'
+      JUPYTER_TOKEN: 'hpc-energy-analysis'
+    volumes:
+      - ./ml-models:/home/jovyan/ml-models
+      - ./results:/home/jovyan/results
+      - ./scripts:/home/jovyan/scripts
+      - jupyter_data:/home/jovyan/work
+    networks:
+      - hpc-network
+    restart: unless-stopped
+
+  # Redis for caching and job queues
+  redis:
+    image: redis:7-alpine
+    container_name: hpc-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - hpc-network
+    restart: unless-stopped
+
+  # Alertmanager for notifications
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: hpc-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./infrastructure/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - alertmanager_data:/alertmanager
+    networks:
+      - hpc-network
+    restart: unless-stopped
+
+volumes:
+  timescaledb_data:
+  prometheus_data:
+  grafana_data:
+  jupyter_data:
+  redis_data:
+  alertmanager_data:
+
+networks:
+  hpc-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
