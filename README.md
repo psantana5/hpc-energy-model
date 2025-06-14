@@ -1,215 +1,406 @@
-# Modelado y Predicción del Consumo Energético en Clústeres HPC
+# HPC Energy Model Project
 
-## Descripción del Proyecto
+A comprehensive High-Performance Computing (HPC) energy monitoring and prediction system designed for virtualized environments. This project provides real-time energy consumption tracking, predictive modeling, and energy-aware job scheduling for HPC clusters.
 
-Este proyecto de Trabajo de Fin de Grado (TFG) en Ingeniería Informática tiene como objetivo desarrollar un sistema completo para el modelado y predicción del consumo energético en clústeres de computación de alto rendimiento (HPC) mediante el análisis de patrones térmicos y carga de trabajo.
+## 🎯 Project Overview
 
-### Objetivos Principales
+This project implements an end-to-end energy monitoring solution for HPC systems, featuring:
 
-- **Recolección de métricas**: Capturar datos térmicos, de carga de trabajo y consumo energético de jobs HPC
-- **Modelado predictivo**: Desarrollar algoritmos de machine learning para predecir el consumo energético por job
-- **Visualización avanzada**: Crear dashboards interactivos con Grafana para análisis de correlaciones
-- **Optimización energética**: Proporcionar recomendaciones inteligentes para la colocación eficiente de jobs
+- **Real-time Energy Monitoring**: Custom exporters for thermal and job metrics
+- **Predictive Energy Modeling**: Machine learning-based energy consumption prediction
+- **Energy-Aware Scheduling**: Slurm integration with QoS-based energy optimization
+- **Comprehensive Visualization**: Grafana dashboards for energy analysis
+- **Data Storage**: TimescaleDB for time-series energy data
+- **Alerting System**: Prometheus-based alerts for thermal and energy events
 
-## Arquitectura del Sistema
+## 🏗️ Architecture
 
-### Infraestructura Base
-- **Proxmox**: Plataforma de virtualización con CPU passthrough
-- **Slurm**: Gestor de colas y recursos HPC
-- **Prometheus**: Sistema de monitorización y alertas
-- **TimescaleDB**: Base de datos optimizada para series temporales
-- **Grafana**: Plataforma de visualización y dashboards
-
-### Componentes del Clúster
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Slurm Head    │    │  Compute Node 1 │    │  Compute Node 2 │
-│   Controller    │    │                 │    │                 │
-│                 │    │  - Node Exporter│    │  - Node Exporter│
-│ - Prometheus    │    │  - Thermal Mon. │    │  - Thermal Mon. │
-│ - TimescaleDB   │    │  - Job Scripts  │    │  - Job Scripts  │
-│ - Grafana       │    │                 │    │                 │
+│   HPC Nodes     │    │   Monitoring    │    │   Analysis      │
+│                 │    │                 │    │                 │
+│ ┌─────────────┐ │    │ ┌─────────────┐ │    │ ┌─────────────┐ │
+│ │ Slurm Jobs  │ │───▶│ │ Prometheus  │ │───▶│ │ Grafana     │ │
+│ │ Thermal     │ │    │ │ Exporters   │ │    │ │ Dashboards  │ │
+│ │ Sensors     │ │    │ │ Alertmanager│ │    │ │             │ │
+│ └─────────────┘ │    │ └─────────────┘ │    │ └─────────────┘ │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         │              ┌─────────────────┐              │
+         │              │   TimescaleDB   │              │
+         └──────────────│   Time-series   │──────────────┘
+                        │   Database      │
+                        └─────────────────┘
+                                 │
+                        ┌─────────────────┐
+                        │ Energy Prediction│
+                        │ API & ML Models │
+                        └─────────────────┘
 ```
 
-## Dataset y Métricas
+## 📋 Prerequisites
 
-Cada job ejecutado genera las siguientes métricas:
+- **Docker & Docker Compose**: For containerized deployment
+- **Linux Environment**: Ubuntu 20.04+ or CentOS 8+ recommended
+- **Hardware**: Minimum 8GB RAM, 4 CPU cores, 50GB storage
+- **Network**: Access to HPC nodes for monitoring
+- **Optional**: GPU support for accelerated workloads
 
-| Métrica | Descripción | Unidad |
-|---------|-------------|--------|
-| `timestamp` | Marca temporal de ejecución | Unix timestamp |
-| `job_id` | Identificador único del job | String |
-| `job_type` | Tipo de carga (CPU/IO/Mixed) | Enum |
-| `node_temp_avg` | Temperatura media del nodo | °C |
-| `node_temp_peak` | Pico térmico durante ejecución | °C |
-| `duration` | Duración total del job | Segundos |
-| `cpu_freq_avg` | Frecuencia media de CPU | MHz |
-| `energy_consumption` | Consumo energético estimado | Watts |
-| `memory_usage` | Uso de memoria promedio | MB |
-| `cpu_utilization` | Utilización de CPU promedio | % |
+## 🚀 Quick Start
 
-## Estructura del Proyecto
+### 1. Clone the Repository
+
+```bash
+git clone <repository-url>
+cd hpc-energy-model
+```
+
+### 2. Environment Setup
+
+```bash
+# Copy environment template
+cp .env.example .env
+
+# Edit configuration
+vim .env
+```
+
+### 3. Deploy the Stack
+
+```bash
+# Start all services
+docker-compose up -d
+
+# Check service status
+docker-compose ps
+
+# View logs
+docker-compose logs -f
+```
+
+### 4. Access Services
+
+- **Grafana**: http://localhost:3000 (admin/admin)
+- **Prometheus**: http://localhost:9090
+- **Energy Prediction API**: http://localhost:5000
+- **TimescaleDB**: localhost:5432 (postgres/password)
+
+## 📁 Project Structure
 
 ```
 hpc-energy-model/
-├── README.md
-├── LICENSE
-├── requirements.txt
-├── docker-compose.yml
-├── docs/
-│   ├── architecture.md
-│   ├── installation.md
-│   └── api-reference.md
-├── infrastructure/
-│   ├── proxmox/
-│   │   ├── vm-templates/
-│   │   └── network-config/
-│   ├── slurm/
-│   │   ├── slurm.conf
-│   │   ├── slurmdbd.conf
-│   │   └── job-templates/
-│   ├── prometheus/
-│   │   ├── prometheus.yml
-│   │   └── rules/
-│   └── grafana/
-│       ├── dashboards/
-│       └── provisioning/
-├── monitoring/
-│   ├── exporters/
-│   │   ├── thermal-exporter/
-│   │   ├── job-exporter/
-│   │   └── energy-exporter/
-│   └── collectors/
-├── workloads/
-│   ├── cpu-intensive/
-│   ├── io-intensive/
-│   ├── mixed-workloads/
-│   └── benchmark-suite/
-├── ml-models/
-│   ├── data-preprocessing/
-│   ├── feature-engineering/
-│   ├── training/
-│   └── inference/
-├── api/
-│   ├── energy-predictor/
-│   ├── job-scheduler/
-│   └── recommendation-engine/
-├── scripts/
-│   ├── setup/
-│   ├── data-collection/
-│   └── automation/
-├── tests/
-│   ├── unit/
-│   ├── integration/
-│   └── performance/
-└── results/
-    ├── datasets/
-    ├── models/
-    └── reports/
+├── analysis/                    # Data analysis and ML scripts
+│   └── data_analysis.py        # Energy data analysis tools
+├── api/                        # Energy prediction API
+│   ├── energy_prediction_api.py # Flask API for predictions
+│   ├── Dockerfile              # API container
+│   ├── requirements.txt        # Python dependencies
+│   └── entrypoint.sh          # API startup script
+├── database/                   # Database initialization
+│   └── init.sql               # TimescaleDB schema
+├── infrastructure/             # Infrastructure configuration
+│   ├── grafana/               # Grafana provisioning
+│   │   └── provisioning/      # Dashboards and datasources
+│   └── prometheus/            # Prometheus configuration
+│       ├── prometheus.yml     # Main config
+│       └── rules/             # Alert rules
+├── monitoring/                 # Monitoring components
+│   ├── exporters/             # Custom Prometheus exporters
+│   │   ├── job-exporter/      # Slurm job metrics
+│   │   └── thermal-exporter/  # System thermal metrics
+│   └── grafana/               # Grafana dashboards
+│       └── dashboards/        # Dashboard JSON files
+├── slurm/                     # Slurm configuration
+│   ├── scripts/               # Job lifecycle scripts
+│   │   ├── job_prolog.sh      # Pre-job energy setup
+│   │   ├── job_epilog.sh      # Post-job energy analysis
+│   │   └── energy_monitor.sh  # Continuous monitoring
+│   ├── slurm.conf            # Main Slurm configuration
+│   └── qos.conf              # Quality of Service definitions
+├── workloads/                 # Benchmark workloads
+│   ├── cpu-intensive/         # CPU benchmark scripts
+│   ├── io-intensive/          # I/O benchmark scripts
+│   └── mixed/                 # Mixed workload scripts
+├── docker-compose.yml         # Main deployment file
+├── requirements.txt           # Global Python dependencies
+└── README.md                  # This file
 ```
 
-## Instalación y Configuración
+## 🔧 Configuration
 
-### Prerrequisitos
-- Proxmox VE 7.0+
-- Python 3.9+
-- Docker y Docker Compose
-- Al menos 16GB RAM y 4 cores CPU
+### Environment Variables
 
-### Configuración Rápida
+Key configuration options in `.env`:
 
-1. **Clonar el repositorio**:
+```bash
+# Database Configuration
+TIMESCALE_HOST=timescaledb
+TIMESCALE_PORT=5432
+TIMESCALE_DB=hpc_energy
+TIMESCALE_USER=postgres
+TIMESCALE_PASS=password
+
+# Monitoring Configuration
+PROMETHEUS_PORT=9090
+GRAFANA_PORT=3000
+ALERTMANAGER_PORT=9093
+
+# API Configuration
+API_PORT=5000
+API_DEBUG=false
+REDIS_HOST=redis
+REDIS_PORT=6379
+
+# Energy Monitoring
+MONITORING_INTERVAL=30
+THERMAL_WARNING_TEMP=75
+THERMAL_CRITICAL_TEMP=85
+```
+
+### Slurm Integration
+
+1. **Copy Slurm Configuration**:
    ```bash
-   git clone https://github.com/psantana5/hpc-energy-model.git
-   cd hpc-energy-model
+   sudo cp slurm/slurm.conf /etc/slurm/
+   sudo cp slurm/qos.conf /etc/slurm/
    ```
 
-2. **Instalar dependencias**:
+2. **Install Job Scripts**:
    ```bash
-   pip install -r requirements.txt
+   sudo cp slurm/scripts/* /etc/slurm/scripts/
+   sudo chmod +x /etc/slurm/scripts/*
    ```
 
-3. **Configurar infraestructura**:
+3. **Restart Slurm Services**:
    ```bash
-   ./scripts/setup/deploy-infrastructure.sh
+   sudo systemctl restart slurmctld
+   sudo systemctl restart slurmd
    ```
 
-4. **Inicializar servicios**:
+## 📊 Usage Examples
+
+### Running Benchmark Workloads
+
+```bash
+# CPU-intensive benchmark
+sbatch --qos=cpu_intensive --job-name=cpu_bench \
+       --output=cpu_bench_%j.out \
+       --wrap="python3 workloads/cpu-intensive/cpu_benchmark.py --duration 300 --intensity high"
+
+# I/O-intensive benchmark
+sbatch --qos=io_intensive --job-name=io_bench \
+       --output=io_bench_%j.out \
+       --wrap="python3 workloads/io-intensive/io_benchmark.py --duration 300 --workload_type mixed"
+
+# Mixed workload with energy monitoring
+sbatch --qos=energy_efficient --job-name=mixed_bench \
+       --output=mixed_bench_%j.out \
+       --wrap="python3 workloads/mixed/mixed_benchmark.py --duration 600 --pattern concurrent"
+```
+
+### Energy Prediction API
+
+```bash
+# Predict energy consumption for a job
+curl -X POST http://localhost:5000/predict \
+     -H "Content-Type: application/json" \
+     -d '{
+       "duration_seconds": 3600,
+       "cpu_usage_percent": 80,
+       "memory_usage_percent": 60,
+       "io_read_mbps": 10,
+       "io_write_mbps": 5,
+       "cpu_cores": 8,
+       "job_type": "cpu_intensive"
+     }'
+
+# Get scheduling recommendations
+curl http://localhost:5000/recommend/schedule?job_type=cpu_intensive&duration=3600
+
+# Check API health
+curl http://localhost:5000/health
+```
+
+### Data Analysis
+
+```bash
+# Run energy analysis
+python3 analysis/data_analysis.py --start_date 2024-01-01 --end_date 2024-01-31
+
+# Generate energy efficiency report
+python3 analysis/data_analysis.py --report_type efficiency --output report.json
+```
+
+## 📈 Monitoring and Dashboards
+
+### Grafana Dashboards
+
+1. **HPC System Overview**: Real-time system metrics and job status
+2. **Energy Analysis**: Energy consumption patterns and efficiency metrics
+3. **Thermal Monitoring**: Temperature trends and thermal events
+4. **Job Performance**: Job execution metrics and resource utilization
+
+### Prometheus Metrics
+
+Key metrics collected:
+
+- `hpc_job_energy_wh`: Energy consumption per job
+- `hpc_node_cpu_temp_celsius`: CPU temperature
+- `hpc_node_power_watts`: Estimated power consumption
+- `hpc_job_duration_seconds`: Job execution time
+- `hpc_thermal_events_total`: Thermal event counters
+
+### Alerts
+
+Configured alerts include:
+
+- High CPU/GPU temperature warnings
+- Excessive energy consumption
+- Job failure rate thresholds
+- System resource exhaustion
+- Exporter downtime
+
+## 🔬 Research and Analysis
+
+### Energy Efficiency Metrics
+
+- **Energy per FLOP**: Floating-point operations per joule
+- **Performance per Watt**: Computational throughput per watt
+- **Thermal Efficiency**: Performance vs. temperature correlation
+- **Job Type Analysis**: Energy patterns by workload characteristics
+
+### Machine Learning Models
+
+The system includes:
+
+- **Linear Regression**: Baseline energy prediction
+- **Random Forest**: Complex pattern recognition
+- **Feature Engineering**: CPU, memory, I/O, and thermal features
+- **Model Validation**: Cross-validation and accuracy metrics
+
+### Data Collection
+
+Metrics collected every 30 seconds:
+
+- CPU usage and frequency
+- Memory utilization
+- Disk I/O rates
+- Network traffic
+- Temperature sensors
+- Power estimates
+
+## 🛠️ Development
+
+### Adding New Exporters
+
+1. Create exporter directory in `monitoring/exporters/`
+2. Implement Prometheus metrics endpoint
+3. Add Dockerfile and configuration
+4. Update docker-compose.yml
+5. Configure Prometheus scraping
+
+### Extending the API
+
+1. Add new endpoints in `api/energy_prediction_api.py`
+2. Update requirements if needed
+3. Add tests and documentation
+4. Rebuild API container
+
+### Custom Workloads
+
+1. Create workload script in appropriate `workloads/` subdirectory
+2. Follow existing patterns for metrics collection
+3. Add Slurm job submission examples
+4. Document resource requirements
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **Database Connection Errors**:
    ```bash
-   docker-compose up -d
+   # Check TimescaleDB status
+   docker-compose logs timescaledb
+   
+   # Verify connection
+   docker-compose exec timescaledb psql -U postgres -d hpc_energy -c "\dt"
    ```
 
-## Metodología de Desarrollo
+2. **Missing Thermal Sensors**:
+   ```bash
+   # Check available sensors
+   ls /sys/class/thermal/thermal_zone*/
+   
+   # Install lm-sensors
+   sudo apt-get install lm-sensors
+   sudo sensors-detect
+   ```
 
-### Fase 1: Preparación del Entorno (Semanas 1-3)
-- [ ] Configuración de VMs en Proxmox
-- [ ] Instalación y configuración de Slurm
-- [ ] Despliegue de stack de monitorización
-- [ ] Desarrollo de exportadores personalizados
+3. **Slurm Integration Issues**:
+   ```bash
+   # Check Slurm logs
+   sudo journalctl -u slurmctld -f
+   sudo journalctl -u slurmd -f
+   
+   # Verify configuration
+   sudo scontrol show config
+   ```
 
-### Fase 2: Recolección de Datos (Semanas 4-6)
-- [ ] Implementación de workloads sintéticos
-- [ ] Automatización de ejecución de jobs
-- [ ] Validación de métricas recolectadas
-- [ ] Generación de dataset inicial
+4. **Prometheus Scraping Failures**:
+   ```bash
+   # Check target status
+   curl http://localhost:9090/targets
+   
+   # Verify exporter endpoints
+   curl http://localhost:9100/metrics
+   ```
 
-### Fase 3: Análisis y Modelado (Semanas 7-10)
-- [ ] Análisis exploratorio de datos
-- [ ] Ingeniería de características
-- [ ] Entrenamiento de modelos predictivos
-- [ ] Validación y optimización de modelos
+### Performance Tuning
 
-### Fase 4: Visualización y Recomendaciones (Semanas 11-12)
-- [ ] Desarrollo de dashboards en Grafana
-- [ ] Implementación de motor de recomendaciones
-- [ ] API para predicciones en tiempo real
-- [ ] Documentación y presentación final
+1. **Database Optimization**:
+   - Adjust TimescaleDB chunk intervals
+   - Configure retention policies
+   - Optimize indexes for query patterns
 
-## Tecnologías Utilizadas
+2. **Monitoring Overhead**:
+   - Increase monitoring intervals for production
+   - Reduce metric cardinality
+   - Use sampling for high-frequency data
 
-- **Orquestación**: Slurm, Proxmox
-- **Monitorización**: Prometheus, Node Exporter, exportadores personalizados
-- **Base de Datos**: TimescaleDB, PostgreSQL
-- **Visualización**: Grafana, Jupyter Notebooks
-- **Machine Learning**: scikit-learn, pandas, numpy
-- **Desarrollo**: Python, Bash, Docker
-- **Testing**: pytest, unittest
+3. **Resource Allocation**:
+   - Scale containers based on load
+   - Adjust memory limits
+   - Configure CPU affinity
 
-## Resultados Esperados
+## 📚 References
 
-- **Dataset completo** con +10,000 jobs ejecutados
-- **Modelo predictivo** con precisión >85% en consumo energético
-- **Dashboard interactivo** para análisis en tiempo real
-- **Motor de recomendaciones** para optimización de scheduling
-- **Documentación técnica** completa del sistema
+- [Slurm Workload Manager](https://slurm.schedmd.com/)
+- [Prometheus Monitoring](https://prometheus.io/)
+- [Grafana Visualization](https://grafana.com/)
+- [TimescaleDB Time-series](https://www.timescale.com/)
+- [HPC Energy Efficiency Research](https://www.top500.org/green500/)
 
-## Contribución
+## 🤝 Contributing
 
-Este proyecto está desarrollado como TFG. Para sugerencias o mejoras:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests and documentation
+5. Submit a pull request
 
-1. Fork del repositorio
-2. Crear rama feature (`git checkout -b feature/nueva-funcionalidad`)
-3. Commit de cambios (`git commit -am 'Añadir nueva funcionalidad'`)
-4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
-5. Crear Pull Request
+## 📄 License
 
-## Licencia
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para detalles.
+## 🙋 Support
 
-## Autor
+For questions and support:
 
-**[Pau Santana]** - Estudiante de Ingeniería Informática  
-Universidad: [UOC (Universitat Oberta de Catalunya)]  
-Email: [tu-email@universidad.edu]
-
-## Agradecimientos
-
-- Director/a del TFG: [Nombre del director]
-- Departamento de [Nombre del departamento]
-- Comunidad open source de Slurm, Prometheus y Grafana
+- Create an issue in the repository
+- Check the troubleshooting section
+- Review the documentation
+- Contact the development team
 
 ---
 
-*Proyecto desarrollado como Trabajo de Fin de Grado en Ingeniería Informática*
+**Note**: This project is designed for research and educational purposes. For production HPC environments, additional security hardening and performance optimization may be required.
