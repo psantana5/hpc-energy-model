@@ -426,7 +426,6 @@ Thumbs.db
 # Project specific
 # Data directories
 data/
-models/
 backups/
 
 # Database data
