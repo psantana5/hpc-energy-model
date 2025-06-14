@@ -10,20 +10,18 @@
 __version__ = "1.0.0"
 __author__ = "HPC Energy Model Project"
 
-from .core.simulator import HPCEnergySimulator
+from .core.simulation_engine import HPCClusterSimulator
 from .core.data_loader import HistoricalDataLoader
-from .models.thermal_model import ThermalModel
-from .models.energy_model import EnergyModel
-from .models.workload_model import WorkloadModel
-from .validation.comparator import ModelComparator
+from .models.thermal_predictor import ThermalPredictor
+from .models.energy_predictor import EnergyPredictor
+from .validation.validator import ModelValidator
 from .utils.config import ModelingConfig
 
 __all__ = [
-    'HPCEnergySimulator',
+    'HPCClusterSimulator',
     'HistoricalDataLoader',
-    'ThermalModel',
-    'EnergyModel', 
-    'WorkloadModel',
-    'ModelComparator',
+    'ThermalPredictor',
+    'EnergyPredictor',
+    'ModelValidator',
     'ModelingConfig'
 ]
