@@ -13,7 +13,8 @@ KEY_PAIR_NAME="hpc-energy-keypair"
 S3_BUCKET_PREFIX="hpc-energy-model"
 VPC_CIDR="10.0.0.0/16"
 SUBNET_CIDR="10.0.1.0/24"
-INSTANCE_TYPE="c5.xlarge"
+HEAD_NODE_INSTANCE_TYPE="c5.xlarge"
+COMPUTE_NODE_INSTANCE_TYPE="c5.metal"
 MAX_QUEUE_SIZE="10"
 MIN_QUEUE_SIZE="0"
 
@@ -240,7 +241,7 @@ Region: ${REGION}
 Image:
   Os: ubuntu2004
 HeadNode:
-  InstanceType: ${INSTANCE_TYPE}
+  InstanceType: ${HEAD_NODE_INSTANCE_TYPE}
   Networking:
     SubnetId: subnet-placeholder
   Ssh:
@@ -261,7 +262,7 @@ Scheduling:
     - Name: compute
       ComputeResources:
         - Name: compute-resource
-          InstanceType: ${INSTANCE_TYPE}
+          InstanceType: ${COMPUTE_NODE_INSTANCE_TYPE}
           MinCount: ${MIN_QUEUE_SIZE}
           MaxCount: ${MAX_QUEUE_SIZE}
       Networking:
