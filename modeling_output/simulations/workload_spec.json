@@ -1,0 +1,92 @@
+[
+  {
+    "job_id": "synthetic_job_0000",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 0,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0001",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 60,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0002",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 120,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0003",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 180,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0004",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 240,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0005",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 300,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0006",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 360,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0007",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 420,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0008",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 480,
+    "workload_pattern": "compute"
+  },
+  {
+    "job_id": "synthetic_job_0009",
+    "job_type": "cpu_intensive",
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "duration_seconds": 3600,
+    "arrival_time": 540,
+    "workload_pattern": "compute"
+  }
+]
